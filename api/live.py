@@ -35,6 +35,8 @@ class handler(BaseHTTPRequestHandler):
         self.send_response(code)
         self.send_header("Content-Type", "application/json")
         self.send_header("Cache-Control", "public, s-maxage=10, stale-while-revalidate=20" if code == 200 else "no-store")
+        if code == 200:  # Vercel's edge reads this one for functions; browsers never see it
+            self.send_header("Vercel-CDN-Cache-Control", "max-age=10, stale-while-revalidate=20")
         self.send_header("Content-Length", str(len(raw)))
         self.end_headers()
         self.wfile.write(raw)
