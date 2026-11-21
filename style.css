@@ -861,7 +861,8 @@ table.blood { margin-top: 2px; }
 }
 /* Photos: three to a row, without captions; the photo's name shows on hover and in the lightbox. */
 .photos { grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.history .photos { grid-template-columns: 1fr 1fr; gap: 10px 8px; }
+.history .photos, .secphotos { grid-template-columns: 1fr 1fr; gap: 10px 8px; }
+.facts + .secphotos { margin-top: 12px; }
 @media (max-width: 329px) { .photos { grid-template-columns: 1fr 1fr; } }
 
 @media (max-width: 720px) { #legendCard { z-index: 3; } }

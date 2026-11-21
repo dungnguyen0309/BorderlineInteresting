@@ -55,6 +55,12 @@ python scripts/build_security.py
 This writes `data/security.json` for the Security tab: each country's Military and Security text from the CIA World Factbook (forces, personnel, equipment, service age and obligation, deployments) and NPT parties. The nuclear lists (warheads, hosts, sharing, NPT and TPNW status) and their sources are edited by hand in the same file; mutual-defence and security-cooperation groups are marked by a `security` field in `data/blocs.json`, and each military base in `data/hotspots.json` names its `host` and `operator`. It makes one Wikidata query and a few hundred Factbook fetches, about a minute.
 
 ```bash
+python scripts/build_military_photos.py
+```
+
+Run after `build_data.py`. This writes `data/security-photos.json` for the Security tab: up to six photos of each country's armed forces and their branches, and up to twelve of aircraft, ships, vehicles and missiles in their service. Wikidata names the subjects (operated by the country or its forces with no end date, types from 1960 on), the operator lists in each English Wikipedia article confirm the country still uses them, and Wikimedia Commons gives each file's licence, author and image. Only freely licensed photographs are kept.
+
+```bash
 python scripts/build_symbols.py
 ```
 
@@ -84,6 +90,7 @@ This writes `data/labels.json`, where each country's name goes on the globe: the
 - Photographic map: NASA Blue Marble Next Generation (2004), VIIRS Black Marble (2016) and daily VIIRS NOAA-20 / MODIS Terra corrected reflectance, all through NASA GIBS ("We acknowledge the use of imagery provided by services from NASA's Global Imagery Browse Services (GIBS), part of NASA's Earth Science Data and Information System (ESDIS)."), and Sentinel-2 cloudless 2025 by EOX (CC BY-NC-SA 4.0, non-commercial use only)
 - Airports map: OurAirports (public domain), Wikidata (CC0), photos from Wikimedia Commons (each under its own licence, shown when opened), summaries from Wikipedia (CC BY-SA 4.0) and views from above from Sentinel-2 cloudless 2025 by EOX (CC BY-NC-SA 4.0)
 - Flags and coats of arms: Wikimedia Commons via Wikidata (P41, P94); each image shows its author and licence when opened
+- Armed forces and equipment photos: Wikimedia Commons via Wikidata (CC0, operators from P137), checked against English Wikipedia operator lists (CC BY-SA); each photo shows its author and licence when opened
 - The app's Sources section lists every source in one place: each map type's full credit (`credit` in `maps/types.js` and `maps/types/`), each hot spot's sources by place, and the books behind the historical view. The bottom corner of the map shows only the credit a licence requires on the map itself (`onMap`), such as OpenStreetMap's
 
 Author: Tuan Dung Nguyen

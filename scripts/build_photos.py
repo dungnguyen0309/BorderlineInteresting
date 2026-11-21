@@ -169,7 +169,24 @@ def author(meta):
     m = re.match(r"No machine-readable author provided\. (.+?) assumed", s)
     s = m.group(1) if m else s
     s = "Unknown author" if re.fullmatch(r"(Unknown author ?)+", s) else s
-    return s if len(s) <= 80 else s[:79].rstrip() + "…"
+    # Wiki user-page leftovers: "Name ( talk)Name", "The original uploader was Name at English Wikipedia."
+    s = re.sub(r"\s*\(\s*(?:talk|contribs|website|mail)\b[^)]*\)", "", s, flags=re.I).replace("~commonswiki", "")
+    s = re.sub(r"^(.{4,})\1$", r"\1", s)
+    s = re.sub(r"(?i)^(.+?);\s*(the )?original uploader was.*$", r"\1", s)
+    m = re.match(r"(?i)(?:(?:the )?original uploader was )?(.+?) at (?:[a-z]+ wikipedia|[a-z]{2,3}\.wikipedia)\b", s) or \
+        re.match(r"(?i)this image photographed by (.+?) with permission", s)
+    s = (m.group(1) if m else s).strip(" .")
+    if len(s) > 80:  # cut at a word, not inside one
+        s = s[:80].rsplit(" ", 1)[0].rstrip(" ,;:(") + "…"
+    return s
+
+
+assert author({"Artist": {"value": "Hisamikabunomura ( talk)Hisamikabunomura"}}) == "Hisamikabunomura"
+assert author({"Artist": {"value": "U.S. Navy; The original uploader was Cobatfor at English Wikipedia. (Transferred)"}}) == "U.S. Navy"
+assert author({"Artist": {"value": "The original uploader was Mottld at English Wikipedia."}}) == "Mottld"
+assert author({"Artist": {"value": "Original uploader was Mottld at en.wikipedia"}}) == "Mottld"
+assert author({"Artist": {"value": "Mr Bullitt~commonswiki"}}) == "Mr Bullitt" and author({"Artist": {"value": "A. Smith"}}) == "A. Smith"
+assert not author({"Artist": {"value": "word " * 30}}).endswith(" …")
 
 
 def licence(meta):

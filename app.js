@@ -609,6 +609,8 @@ function loadHi() {
 // 140 ms after the last movement the detailed map is drawn again.
 let idleTimer = 0;
 function moving() {
+  // While the app starts, every frame is drawn at full detail and resolution: the first globe anyone sees is sharp.
+  if (S.booting) { S.moving = false; return; }
   S.moving = true;
   clearTimeout(idleTimer);
   if (S.gesture) return; // no full-detail redraw until the finger or button is released
@@ -1262,7 +1264,7 @@ function frame({ at, k } = {}) {
     dur = Math.min(1000, Math.max(FLY, 400 + (3 * arc) / RAD));
   }
   const move = d3.interpolate(proj.translate(), [fr.x, fr.y]);
-  const tr = d3.select(canvas).transition().duration(still() ? 0 : dur).ease(d3.easeCubicInOut)
+  const tr = d3.select(canvas).transition().duration(still() || S.booting ? 0 : dur).ease(d3.easeCubicInOut)
     .tween('frame', () => t => { if (turn) proj.rotate(turn(along(t))); proj.translate(move(t)); moving(); });
   if (at || k) tr.call(zoom.scaleTo, k1); else hop = null;
   // Drawn in the tick itself, after the zoom's tween has set the scale, so the globe moves in the frame the panel changes.
@@ -1834,11 +1836,12 @@ const PHOTO_GROUPS = [['nature', 'Nature'], ['culture', 'Culture'], ['cities', '
 // caption: only the historical plates keep a line under them (who drew them, and when); the button already says
 // it, so the line is hidden from screen readers. Thumbnails are Commons' 330px step (sharp at 3x in a 107px slot);
 // the lightbox asks for 1280px.
+// A string caption is used as the line itself (Security's "Su-30MK2 · Fighter aircraft").
 function photoButton(iso, g, i, p, label, caption = false) {
   const tag = caption ? 'figure' : 'div';
   return `<${tag} class="photo"><button type="button" data-photo="${iso}|${g}|${i}" aria-label="${esc(`${label}: ${p.title}. Open the photo`)}" title="${esc(p.title)}">
       <img src="${esc(p.img.replace(/\/\d+px-/, '/330px-'))}" alt="" loading="lazy" decoding="async" width="${p.w}" height="${p.h}"></button>
-    ${caption ? `<figcaption aria-hidden="true">${esc(label)}: ${esc(p.title)}</figcaption>` : ''}</${tag}>`;
+    ${caption ? `<figcaption aria-hidden="true">${esc(caption === true ? `${label}: ${p.title}` : caption)}</figcaption>` : ''}</${tag}>`;
 }
 // Six photos (two rows), the first of each group leading, then the rest behind "Show all".
 function photosHTML(d) {
@@ -1874,6 +1877,7 @@ function openPhoto(key) {
     : g === 'people' ? peopleData?.photos?.countries?.[iso]?.[+i]
     : g === 'history' ? peopleData?.history?.regions?.[iso]?.images?.[+i]
     : g === 'symbols' ? symbols?.countries[iso]?.[+i]
+    : g === 'forces' || g === 'equip' ? secPhotos?.countries[iso]?.[g === 'forces' ? 'forces' : 'equipment']?.[+i]
     : photos?.countries[iso]?.[g]?.[+i];
   if (!p) return;
   const box = $('#lightbox'), old = box.querySelector('img'), img = new Image(); // a new element never paints the previous photo
@@ -1891,7 +1895,7 @@ function openPhoto(key) {
   box.querySelector('.pic').style.backgroundImage = `url("${p.img.replace(/\/\d+px-/, '/330px-')}")`;
   if (!img.complete) { img.classList.add('wait'); img.addEventListener('load', () => img.classList.remove('wait'), { once: true }); }
   old.replaceWith(img);
-  box.querySelector('.cap').textContent = p.caption || p.title;
+  box.querySelector('.cap').textContent = p.caption || (g === 'forces' || g === 'equip' ? `${p.title} (${p.kind})` : p.title);
   box.querySelector('.credit').innerHTML = `${p.author ? esc(p.author) + ', ' : ''}${esc(p.licence)}, via <a href="${esc(p.page)}" target="_blank" rel="noopener">Wikimedia Commons</a>`;
   box.showModal();
 }
@@ -2131,6 +2135,17 @@ function loadSecurity() {
     .then(s => { security = s; if (S.sel?.kind === 'country') lateRender(); });
   return securityLoad;
 }
+// Photos of the armed forces and of equipment in service: data/security-photos.json from
+// scripts/build_military_photos.py, fetched the first time the Security tab is shown; a failed load leaves them out.
+let secPhotos = null, secPhotosLoad = null;
+function loadSecPhotos() {
+  secPhotosLoad ||= fetch('data/security-photos.json')
+    .then(r => (r.ok ? r.json() : Promise.reject(new Error(r.status))))
+    .catch(() => ({ countries: {} }))
+    .then(p => { secPhotos = p; if (S.sel?.kind === 'country') lateRender(); });
+}
+// A two-column grid with a caption under each photo, six shown, then "Show all".
+const secPhotoGrid = (iso, g, list, key) => capped(list.map((p, i) => photoButton(iso, g, i, p, p.kind, `${p.title} · ${p.kind}`)), 6, 'div', 'photos secphotos', key);
 const OWNER = { USA: 'US', RUS: 'Russian' };
 const longDate = s => new Date(s + 'T00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
 // Nuclear weapons held or hosted, and the NPT and TPNW. Treaty rows only for UN members and observers, the
@@ -2182,7 +2197,10 @@ function securityHTML(d, a, ind) {
   // A latest personnel figure of 0 follows years of real counts (Libya, Palestine): a gap in the estimates, not zero forces.
   const pers = last(m.pers);
   const forces = [['Personnel', pers?.[0] ? yv(pers, num) : null], ['Share of labour force', a.x?.milLab?.[0] ? xv('milLab', pct) : null]];
-  if (forces.some(r => r[1])) out.push(`<h3>Armed forces</h3>${dl(forces)}`);
+  if (S.tab === 'security') loadSecPhotos();
+  const pics = secPhotos?.countries[iso] || {};
+  const forcePics = pics.forces?.length ? secPhotoGrid(iso, 'forces', pics.forces, 'secForces') : '';
+  if (forces.some(r => r[1]) || forcePics) out.push(`<h3>Armed forces</h3>${forces.some(r => r[1]) ? dl(forces) : ''}${forcePics}`);
   const trade = [['Imports', yv(last(m.imp), tiv)], ['Exports', yv(last(m.exp), tiv)]];
   if (trade.some(r => r[1])) {
     const lines = [{ name: 'Imports', cls: 's1', values: m.imp }, { name: 'Exports', cls: 's2', values: m.exp }];
@@ -2192,6 +2210,8 @@ function securityHTML(d, a, ind) {
       ? trendChart(lines, v => (v === 0 ? 'under 0.5' : num(v)) + 'M', `Arms imports and exports of ${d.name}${since}, million TIV`, 'Million TIV', { start: y0, tickFmt: num, gaps: true }) : '';
     out.push(`<h3>Arms trade${chart ? since : ''}</h3>${dl(trade)}${chart}<p class="note">TIV is SIPRI's trend-indicator value: it measures the volume of arms transferred, not what was paid.</p>`);
   }
+  // A type's photo is often of another country's aircraft or ship, so the note says so.
+  if (pics.equipment?.length) out.push(`<h3>Equipment in service</h3>${secPhotoGrid(iso, 'equip', pics.equipment, 'secEquip')}<p class="note">Each photo shows the type, not always this country's own.</p>`);
   const nuclear = nuclearRows(iso).filter(r => r[1]);
   if (nuclear.length) out.push(`<h3>Nuclear status</h3>${dl(nuclear)}`);
 
@@ -2675,6 +2695,7 @@ function renderInfo() {
 function setTab(id, focus) {
   const changed = id !== S.tab;
   S.tab = id;
+  if (id === 'security') loadSecPhotos(); // redraws the panel when the photos arrive
   // Beside the globe the panel keeps the tallest height it has had for this country, so it does not jump between tabs.
   // (The phone sheet has a set height.)
   const box = $('#info');
@@ -3493,6 +3514,13 @@ function failLoad(message) {
 }
 
 async function start() {
+  // Start-up: placements snap (no glide) and draw at full detail, until the first input or a few seconds after load.
+  S.booting = true;
+  const booted = () => { S.booting = false; for (const t of ['pointerdown', 'keydown', 'wheel']) removeEventListener(t, booted, true); };
+  for (const t of ['pointerdown', 'keydown', 'wheel']) addEventListener(t, booted, true);
+  // A tab restored from the back-forward cache, or shown again, gets a fresh full-detail frame.
+  addEventListener('pageshow', e => { if (e.persisted) { S.moving = false; draw(); } });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && !S.gesture) { S.moving = false; draw(); } });
   $('#status').textContent = 'Loading map…';
   readTheme();
   drawSphere();
@@ -3512,7 +3540,7 @@ async function start() {
   document.body.classList.remove('loading'); // the controls card stays hidden until it has its contents
   buildIndex();
   bind();
-  // The empty globe was placed before the cards had their contents: it glides from there to its place (frame).
+  // The empty globe was placed before the cards had their contents: it moves from there to its place (frame; a snap while the app starts).
   const early = proj.translate();
   resize();
   proj.translate(early);
@@ -3525,7 +3553,7 @@ async function start() {
   // Data Saver: photos load with the first panel instead.
   if (!navigator.connection?.saveData) (window.requestIdleCallback || (f => setTimeout(f, 1500)))(prefetchPhotos);
   // The webfont can change panel heights after the first layout.
-  document.fonts?.ready.then(() => { layoutChrome(); if (!S.flying) frame(); draw(); });
+  document.fonts?.ready.then(() => { layoutChrome(); if (!S.flying) frame(); draw(); setTimeout(() => { S.booting = false; }, 2500); });
   Promise.all(MAP_FACES.map(f => document.fonts?.load(f))).then(draw, () => {});
 }
 
