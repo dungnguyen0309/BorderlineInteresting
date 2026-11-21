@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    { "source": "/live/flights/:path*", "destination": "/api/live?p=:path*" }
+  ],
+  "functions": {
+    "api/live.py": { "includeFiles": "scripts/serve.py", "maxDuration": 30 }
+  }
+}

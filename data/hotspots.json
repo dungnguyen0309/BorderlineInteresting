@@ -1,0 +1,486 @@
+{
+  "asOf": "November 2026",
+  "layers": [
+    { "id": "chokepoint", "name": "Sea chokepoints", "color": "#1b8bb4", "shape": "diamond", "on": true },
+    { "id": "conflict", "name": "Conflicts and tensions", "color": "#d9482b", "shape": "circle", "on": true },
+    { "id": "dispute", "name": "Territorial disputes", "color": "#c98a0b", "shape": "square", "on": true },
+    { "id": "line", "name": "Strategic lines", "color": "#7a8696", "shape": "ring", "on": true },
+    { "id": "base", "name": "Military bases", "color": "#7b5cc4", "shape": "triangle", "on": false },
+    { "id": "port", "name": "Strategic ports", "color": "#2f9a62", "shape": "squareOpen", "on": false }
+  ],
+  "contested": [
+    { "id": "crimea-area", "name": "Crimea", "holder": "RUS", "points": [[34.1, 45.1]], "held": "Russia", "claimed": "Ukraine", "claimant": "UKR", "hot": "crimea" },
+    { "id": "kurils-area", "name": "Southern Kuril Islands", "holder": "RUS", "points": [[147.9, 45.2], [146.75, 43.8], [145.85, 44.1], [145.95, 44.35]], "held": "Russia", "claimed": "Japan", "claimant": "JPN", "hot": "kurils" },
+    { "id": "wsahara-area", "name": "Western Sahara", "feature": "732", "holder": "MAR", "outline": [[-20, 27.667], [-17, 27.667], [-14, 27.667], [-11, 27.667], [-8.667, 27.667], [-8.667, 20], [-20, 20], [-20, 27.667]], "note": "Morocco holds the land west of its sand berm and claims all of it; the Polisario Front holds the east and wants independence.", "lengthsNote": "Coastline and border lengths for Western Sahara cover only the part east of the berm; Morocco's include the land west of it.", "hot": "western-sahara" },
+    { "id": "siachen-area", "name": "Siachen Glacier", "feature": "Siachen Glacier", "holder": "IND", "held": "India", "claimed": "Pakistan", "claimant": "PAK", "hot": "kashmir" },
+    { "id": "falklands-area", "name": "Falkland Islands", "feature": "238", "holder": "GBR", "held": "the United Kingdom", "claimed": "Argentina", "claimant": "ARG", "hot": "falklands" },
+    { "id": "ncyprus-area", "name": "Northern Cyprus", "feature": "N. Cyprus", "held": "Turkish Cypriot authorities", "claimed": "Cyprus", "claimant": "CYP", "hot": "north-cyprus" },
+    { "id": "taiwan-area", "name": "Taiwan", "feature": "158", "held": "Taiwan's government", "claimed": "China", "claimant": "CHN", "hot": "taiwan" },
+    { "id": "somaliland-area", "name": "Somaliland", "feature": "Somaliland", "held": "Somaliland's government", "claimed": "Somalia", "claimant": "SOM" },
+    { "id": "kosovo-area", "name": "Kosovo", "feature": "Kosovo", "held": "Kosovo's government", "claimed": "Serbia", "claimant": "SRB" }
+  ],
+  "items": [
+    { "id": "hormuz", "major": true, "layer": "chokepoint", "name": "Strait of Hormuz", "at": [56.45, 26.55], "countries": ["IRN", "OMN"],
+      "text": "The only sea route out of the Persian Gulf. Before 2026 about a fifth of the world's oil consumption and LNG trade passed through it. Since the US-Israeli strikes on Iran in February 2026, Iranian threats, mines and fee demands have kept traffic far below normal, and the US has blockaded Iranian ports. In November 2026 Iran was again attacking tankers in the strait.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Amid regional conflict, the Strait of Hormuz remains critical oil chokepoint", "publisher": "U.S. Energy Information Administration, 16 June 2025", "url": "https://www.eia.gov/todayinenergy/detail.php?id=65504"},
+        {"title": "The Strait of Hormuz is 'open', but it's mined, half-empty, and subject to tolls both sides say they might charge", "publisher": "Fortune, 23 June 2026", "url": "https://fortune.com/2026/06/23/strait-hormuz-tolls-iran-us-shipping-mines-ceasefire/"},
+        {"title": "US and Iran slide closer to fresh all-out war as new exchange of fire increases", "publisher": "Euronews, 16 November 2026", "url": "https://www.euronews.com/2026/11/16/us-and-iran-slide-closer-to-fresh-all-out-war-as-new-exchange-of-fire-increases"}
+      ] },
+    { "id": "malacca", "major": true, "layer": "chokepoint", "name": "Strait of Malacca", "at": [101.0, 2.5], "countries": ["MYS", "SGP", "IDN"],
+      "text": "Links the Indian Ocean to the South China Sea between Malaysia, Singapore and Indonesia. At the Singapore end the Phillip Channel is about 2.8 km wide. More oil passes through it than through any other strait.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Strait of Malacca", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Strait_of_Malacca"}
+      ] },
+    { "id": "babelmandeb", "major": true, "layer": "chokepoint", "name": "Bab el-Mandeb", "at": [43.4, 12.6], "countries": ["YEM", "DJI", "ERI"],
+      "text": "About 26 km wide between Yemen and Djibouti, it is the southern entrance to the Red Sea and so to the Suez Canal. Houthi attacks on ships from late 2023 sent many lines around Africa. In September 2026 a Houthi offensive reached the strait and took Perim Island, and the group now attacks Saudi-linked ships.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Bab al-Mandab Strait", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Bab_al-Mandab_Strait"},
+        {"title": "Houthis seize key Yemeni island in Bab el-Mandeb, taking control of the strait", "publisher": "Euronews, 11 September 2026", "url": "https://www.euronews.com/2026/09/11/houthis-seize-yemeni-island-in-bab-el-mandeb-taking-control-of-the-strait"},
+        {"title": "Red Sea crisis", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Red_Sea_crisis"}
+      ] },
+    { "id": "suez", "major": true, "layer": "chokepoint", "name": "Suez Canal", "at": [32.35, 30.55], "countries": ["EGY"],
+      "text": "A 193 km canal without locks, opened in 1869, joining the Mediterranean and the Red Sea. It cuts about 8,900 km off the voyage from the Arabian Sea to London compared with the route around Africa. Canal fees are one of Egypt's main sources of foreign currency, and they fell by more than half in 2024 when Red Sea traffic collapsed.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Suez Canal", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Suez_Canal"},
+        {"title": "Egypt's revenue from the Suez Canal plunged sharply in 2024", "publisher": "Africanews and AP, 17 April 2025", "url": "https://www.africanews.com/2025/04/17/egypts-revenue-from-the-suez-canal-plunged-sharply-in-2024/"}
+      ] },
+    { "id": "panama", "major": true, "layer": "chokepoint", "name": "Panama Canal", "at": [-79.7, 9.1], "countries": ["PAN", "USA"],
+      "text": "An 82 km lock canal opened in 1914 and handed to Panama in 1999. Its locks run on water from the rain-fed Gatun Lake, so the 2023-24 drought forced cuts in daily crossings. The ports at both ends became a US-China political issue in 2025.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Panama Canal", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Panama_Canal"},
+        {"title": "China fires back at Panama Canal ports deal as geopolitical 'chess game' intensifies", "publisher": "Riviera Maritime Media, 14 March 2025", "url": "https://www.rivieramm.com/news-content-hub/china-fires-back-at-panama-canal-ports-deal-as-geopolitical-chess-game-intensifies-84213"}
+      ] },
+    { "id": "turkish-straits", "layer": "chokepoint", "name": "Bosphorus and Dardanelles", "at": [29.05, 41.1], "countries": ["TUR"],
+      "text": "The Black Sea's only way out to the Mediterranean. The Bosphorus is about 700 m wide at its narrowest, inside Istanbul. Under the 1936 Montreux Convention Turkey closed the straits to warships in 2022.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Turkey closes the Dardanelles and Bosphorus to warships", "publisher": "Naval News, 28 February 2022", "url": "https://www.navalnews.com/naval-news/2022/02/turkey-closes-the-dardanelles-and-bosphorus-to-warships/"},
+        {"title": "Bosporus", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Bosporus"}
+      ] },
+    { "id": "gibraltar", "layer": "chokepoint", "name": "Strait of Gibraltar", "at": [-5.6, 35.95], "countries": ["ESP", "MAR", "GBR"],
+      "text": "About 14 km wide between Spain and Morocco, the Mediterranean's only natural opening to the Atlantic. Britain has held Gibraltar since 1704; Spain holds Ceuta and Melilla on the African shore, which Morocco claims.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Strait of Gibraltar", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Strait_of_Gibraltar"},
+        {"title": "Gibraltar", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Gibraltar"},
+        {"title": "Plazas de soberanía", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Plazas_de_soberan%C3%ADa"}
+      ] },
+    { "id": "dover", "layer": "chokepoint", "name": "Strait of Dover", "at": [1.45, 51.0], "countries": ["GBR", "FRA"],
+      "text": "About 33 km wide between England and France and one of the busiest shipping lanes in the world, so traffic is split into one-way lanes.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Strait of Dover", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Strait_of_Dover"}
+      ] },
+    { "id": "danish-straits", "layer": "chokepoint", "name": "Danish straits", "at": [11.05, 55.4], "countries": ["DNK", "SWE"],
+      "text": "The Great Belt, Little Belt and Øresund are the Baltic Sea's exits to the North Sea. Russian oil from Baltic ports goes out through them, much of it on old tankers of the so-called shadow fleet.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Danish Straits", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Danish_Straits"},
+        {"title": "Shadow fleet", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Shadow_fleet"}
+      ] },
+    { "id": "taiwan-strait", "major": true, "layer": "chokepoint", "name": "Taiwan Strait", "at": [119.7, 24.4], "countries": ["CHN", "TWN"],
+      "text": "About 126 km wide at its narrowest, between mainland China and Taiwan. About half of the world's container ships passed through it in the first seven months of 2022.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Taiwan Strait", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Taiwan_Strait"},
+        {"title": "Taiwan tensions raise risks in one of busiest shipping lanes", "publisher": "Bloomberg, via Stars and Stripes, 2 August 2022", "url": "https://www.stripes.com/theaters/asia_pacific/2022-08-02/taiwan-strait-tensions-supply-chains-6853895.html"}
+      ] },
+    { "id": "lombok", "layer": "chokepoint", "name": "Lombok Strait", "at": [115.75, -8.7], "countries": ["IDN"],
+      "text": "A deep strait between Bali and Lombok, used by ships that draw too much water for the Strait of Malacca.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Lombok Strait", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Lombok_Strait"}
+      ] },
+    { "id": "sunda", "layer": "chokepoint", "name": "Sunda Strait", "at": [105.8, -6.0], "countries": ["IDN"],
+      "text": "Between Sumatra and Java. It is shallow at its north-eastern end and has strong tidal currents, so it is hard for large ships to navigate.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Sunda Strait", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Sunda_Strait"}
+      ] },
+    { "id": "bering", "layer": "chokepoint", "name": "Bering Strait", "at": [-168.9, 65.8], "countries": ["RUS", "USA"],
+      "text": "About 82 km wide between Russia and the United States, the Pacific's only gateway to the Arctic. As sea ice shrinks, the Northern Sea Route along Russia's coast is expected to carry more traffic.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Bering Strait", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Bering_Strait"},
+        {"title": "Northern Sea Route", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Northern_Sea_Route"}
+      ] },
+    { "id": "kerch", "layer": "chokepoint", "name": "Kerch Strait", "at": [36.55, 45.3], "countries": ["RUS", "UKR"],
+      "text": "Joins the Black Sea and the Sea of Azov. Russia opened a road and rail bridge across it to Crimea in 2018-19, which Ukraine has struck several times since 2022, most recently in November 2026.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Russia’s Prized Kerch Bridge Struck In Ukrainian Drone Onslaught", "publisher": "The War Zone, 16 November 2026", "url": "https://www.twz.com/news-features/russias-prized-kerch-bridge-struck-in-ukrainian-drone-onslaught"},
+        {"title": "Crimean Bridge", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Crimean_Bridge"}
+      ] },
+    { "id": "cape", "layer": "chokepoint", "name": "Cape of Good Hope", "at": [18.47, -34.36], "countries": ["ZAF"],
+      "text": "The main detour when the Red Sea or Suez is closed. Sailing round it adds weeks to the voyage between Asia and Europe.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Red Sea crisis", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Red_Sea_crisis"}
+      ] },
+
+    { "id": "ukraine", "major": true, "layer": "conflict", "name": "Russia-Ukraine war", "at": [37.8, 48.0], "countries": ["RUS", "UKR"],
+      "text": "Russia began its full-scale invasion in February 2022, eight years after seizing Crimea and backing separatists in Donbas. The front line runs about 1,250 km through eastern and southern Ukraine.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Ukraine’s front line grows bigger as Russia shifts tactics, top commander says", "publisher": "AP, 26 September 2025", "url": "https://apnews.com/article/russia-ukraine-war-commander-battlefield-b5f634be2e87641a2f6bf627fd99b0e3"},
+        {"title": "Russo-Ukrainian war", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Russo-Ukrainian_war"}
+      ] },
+    { "id": "gaza", "major": true, "layer": "conflict", "name": "Gaza", "at": [34.4, 31.42], "countries": ["ISR", "PSE"],
+      "text": "War began with the Hamas-led attack on Israel on 7 October 2023. A ceasefire took effect in October 2025, by which time most of Gaza's buildings had been damaged or destroyed.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Gaza: Destruction of buildings rises by nearly 10 per cent since ceasefire", "publisher": "UN News, 13 August 2026", "url": "https://news.un.org/en/story/2026/08/1168138"},
+        {"title": "Gaza war", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Gaza_war"}
+      ] },
+    { "id": "iran-war", "layer": "conflict", "major": true, "name": "2026 Iran war", "at": [51.39, 35.69], "countries": ["IRN", "ISR", "USA"],
+      "text": "On 28 February 2026 US and Israeli strikes on Iran killed Supreme Leader Ali Khamenei; his son Mojtaba succeeded him. Iran answered with missiles and drones against Israel, US bases and Gulf states. An interim deal in June did not hold, and in November 2026 Iran and the US were again trading fire around the Strait of Hormuz.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Iran names Mojtaba Khamenei as new supreme leader after father’s killing", "publisher": "Al Jazeera, 8 March 2026", "url": "https://www.aljazeera.com/news/2026/3/8/iran-names-khameneis-son-as-new-supreme-leader-after-fathers-killing-2"},
+        {"title": "The Strait of Hormuz is 'open', but it's mined, half-empty, and subject to tolls both sides say they might charge", "publisher": "Fortune, 23 June 2026", "url": "https://fortune.com/2026/06/23/strait-hormuz-tolls-iran-us-shipping-mines-ceasefire/"},
+        {"title": "US and Iran slide closer to fresh all-out war as new exchange of fire increases", "publisher": "Euronews, 16 November 2026", "url": "https://www.euronews.com/2026/11/16/us-and-iran-slide-closer-to-fresh-all-out-war-as-new-exchange-of-fire-increases"}
+      ] },
+    { "id": "yemen", "layer": "conflict", "name": "Yemen's civil war", "at": [44.2, 15.35], "countries": ["YEM", "SAU"],
+      "text": "At war since 2014. The Houthi movement holds the capital Sanaa and the populous north-west; the internationally recognised government is backed by Saudi Arabia. Fighting resumed in 2026 after years of truce, with Houthi strikes on Saudi Arabia and a push that took the whole Red Sea coast.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Yemeni civil war (2014–present)", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Yemeni_civil_war_(2014%E2%80%93present)"},
+        {"title": "Fighting in Yemen intensifies, and Houthis launch more attacks on Saudi Arabia", "publisher": "The Boston Globe, 13 September 2026", "url": "https://www.bostonglobe.com/2026/09/13/world/fighting-yemen-intensifies-houthis-launch-more-attacks-saudi-arabia/"},
+        {"title": "Houthis seize key Yemeni island in Bab el-Mandeb, taking control of the strait", "publisher": "Euronews, 11 September 2026", "url": "https://www.euronews.com/2026/09/11/houthis-seize-yemeni-island-in-bab-el-mandeb-taking-control-of-the-strait"}
+      ] },
+    { "id": "sudan", "major": true, "layer": "conflict", "name": "Sudan's civil war", "at": [30.0, 14.5], "countries": ["SDN"],
+      "text": "The army and the Rapid Support Forces have fought since April 2023, in one of the world's largest displacement crises. The RSF took El Fasher, the army's last big foothold in Darfur, in October 2025.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "‘Blood on the sand. Blood on the hands’: UN decries world’s failure as Sudan’s El Fasher falls", "publisher": "UN News, 30 October 2025", "url": "https://news.un.org/en/story/2025/10/1166224"},
+        {"title": "Sudanese civil war (2023–present)", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Sudanese_civil_war_(2023%E2%80%93present)"}
+      ] },
+    { "id": "drc-east", "layer": "conflict", "name": "Eastern DR Congo", "at": [29.22, -1.68], "countries": ["COD", "RWA"],
+      "text": "More than 120 armed groups operate in eastern DR Congo, a region rich in minerals. The M23 rebels, backed by Rwanda according to UN experts, took Goma and Bukavu in early 2025.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "UN experts cast blame on Rwanda and Uganda. What are they doing in DRC?", "publisher": "Al Jazeera, 18 July 2025", "url": "https://www.aljazeera.com/news/2025/7/18/un-experts-cast-blame-on-rwanda-and-uganda-what-are-they-doing-in-drc"},
+        {"title": "Kivu conflict", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Kivu_conflict"}
+      ] },
+    { "id": "sahel", "layer": "conflict", "name": "Central Sahel", "at": [0.5, 14.8], "countries": ["MLI", "BFA", "NER"],
+      "text": "Mali, Burkina Faso and Niger, all run by soldiers after coups between 2020 and 2023, are fighting jihadist insurgents. The three left ECOWAS in January 2025.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Niger, Mali, Burkina Faso officially exit ECOWAS", "publisher": "Premium Times, 29 January 2025", "url": "https://www.premiumtimesng.com/news/top-news/770288-niger-mali-burkina-faso-officially-exit-ecowas.html"},
+        {"title": "Alliance of Sahel States", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Alliance_of_Sahel_States"}
+      ] },
+    { "id": "myanmar", "layer": "conflict", "name": "Myanmar's civil war", "at": [96.1, 21.0], "countries": ["MMR"],
+      "text": "The army seized power in February 2021. Ethnic armed groups and resistance forces have since taken large areas, mostly in the borderlands.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Myanmar civil war (2021–present)", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Myanmar_civil_war_(2021%E2%80%93present)"}
+      ] },
+    { "id": "kashmir", "major": true, "layer": "conflict", "name": "Kashmir", "at": [74.8, 34.1], "countries": ["IND", "PAK", "CHN"],
+      "text": "Split between India, Pakistan and China, and claimed in full by India and Pakistan, which have fought several wars over it. After a militant attack at Pahalgam in April 2025 the two exchanged missile and drone strikes for four days in May.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Kashmir conflict", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Kashmir_conflict"},
+        {"title": "2025 India–Pakistan conflict", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/2025_India%E2%80%93Pakistan_conflict"}
+      ] },
+    { "id": "korea-dmz", "major": true, "layer": "conflict", "name": "Korean DMZ", "at": [127.2, 38.25], "countries": ["KOR", "PRK"],
+      "text": "The 1953 armistice stopped the Korean War but no peace treaty followed. The zone is about 4 km wide and 250 km long, and its western end lies close to Seoul.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Korean Demilitarized Zone", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Korean_Demilitarized_Zone"},
+        {"title": "Korean Armistice Agreement", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Korean_Armistice_Agreement"}
+      ] },
+    { "id": "taiwan", "layer": "conflict", "name": "Cross-strait tensions", "at": [121.0, 23.7], "countries": ["TWN", "CHN", "USA"],
+      "text": "Governed separately from the mainland since 1949. Beijing claims it and has not ruled out using force, and its military drills around the island have grown since 2022. US law allows arms sales to help Taiwan defend itself.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Political status of Taiwan", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Political_status_of_Taiwan"},
+        {"title": "Fourth Taiwan Strait Crisis", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Fourth_Taiwan_Strait_Crisis"},
+        {"title": "Taiwan Relations Act", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Taiwan_Relations_Act"}
+      ] },
+    { "id": "haiti", "layer": "conflict", "name": "Haiti's gang crisis", "at": [-72.33, 18.54], "countries": ["HTI"],
+      "text": "Armed gangs control most of Port-au-Prince. A Kenyan-led police mission arrived in 2024, and in 2025 the UN Security Council approved a larger Gang Suppression Force.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "UN Security Council approves 'Gang Suppression Force' for Haiti", "publisher": "Al Jazeera, 30 September 2025", "url": "https://www.aljazeera.com/news/2025/9/30/un-security-council-approves-gang-suppression-force-for-haiti"}
+      ] },
+
+    { "id": "spratly", "major": true, "layer": "dispute", "name": "Spratly Islands", "at": [114.3, 10.0], "countries": ["CHN", "TWN", "VNM", "PHL", "MYS", "BRN"],
+      "text": "Claimed in whole or in part by China, Taiwan, Vietnam, the Philippines, Malaysia and Brunei. China holds seven outposts there, three of them large artificial islands with runways. A 2016 ruling under the UN Law of the Sea rejected China's claim to historic rights; China does not accept it.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Comparing Aerial and Satellite Images of China’s Spratly Outposts", "publisher": "Asia Maritime Transparency Initiative, CSIS, 16 February 2018", "url": "https://amti.csis.org/comparing-aerial-satellite-images-chinas-spratly-outposts/"},
+        {"title": "Spratly Islands", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Spratly_Islands"}
+      ] },
+    { "id": "paracel", "layer": "dispute", "name": "Paracel Islands", "at": [112.0, 16.5], "countries": ["CHN", "VNM", "TWN"],
+      "text": "Held by China since it took the western islands from South Vietnam in 1974. Vietnam and Taiwan claim them.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Paracel Islands", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Paracel_Islands"}
+      ] },
+    { "id": "scarborough", "layer": "dispute", "name": "Scarborough Shoal", "at": [117.76, 15.15], "countries": ["PHL", "CHN"],
+      "text": "Inside the zone the Philippines counts as its exclusive economic zone, but controlled by China's coast guard since a standoff in 2012.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Scarborough Shoal", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Scarborough_Shoal"}
+      ] },
+    { "id": "second-thomas", "layer": "dispute", "name": "Second Thomas Shoal", "at": [115.86, 9.73], "countries": ["PHL", "CHN"],
+      "text": "A few Philippine marines live on the BRP Sierra Madre, a navy ship grounded on the shoal in 1999. Chinese vessels have repeatedly blocked or rammed the boats that resupply it.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Second Thomas Shoal", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Second_Thomas_Shoal"}
+      ] },
+    { "id": "senkaku", "layer": "dispute", "name": "Senkaku / Diaoyu Islands", "at": [123.48, 25.75], "countries": ["JPN", "CHN", "TWN"],
+      "text": "Uninhabited islands run by Japan and claimed by China and Taiwan. Chinese coast guard ships sail near them almost every day.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "China coast guard patrolled Japan-held islands almost daily in 2025 as tensions flare", "publisher": "Reuters, via The Star, 30 January 2026", "url": "https://www.thestar.com.my/aseanplus/aseanplus-news/2026/01/30/china-coast-guard-patrolled-japan-held-islands-almost-daily-in-2025-as-tensions-flare"},
+        {"title": "Senkaku Islands dispute", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Senkaku_Islands_dispute"}
+      ] },
+    { "id": "kurils", "layer": "dispute", "name": "Southern Kuril Islands", "at": [146.6, 44.4], "countries": ["RUS", "JPN"],
+      "text": "Taken by the Soviet Union in 1945 and held by Russia; Japan calls them its Northern Territories. Because of the dispute the two countries have still not signed a peace treaty after the Second World War.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Kuril Islands dispute", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Kuril_Islands_dispute"}
+      ] },
+    { "id": "dokdo", "layer": "dispute", "name": "Dokdo / Takeshima", "at": [131.87, 37.24], "countries": ["KOR", "JPN"],
+      "text": "Small rocky islets held by South Korea and claimed by Japan.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Liancourt Rocks dispute", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Liancourt_Rocks_dispute"}
+      ] },
+    { "id": "aksai-chin", "layer": "dispute", "name": "Aksai Chin", "at": [79.3, 35.1], "countries": ["CHN", "IND"],
+      "text": "Held by China and claimed by India as part of Ladakh. In 2020 a clash in the nearby Galwan Valley killed soldiers on both sides.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Aksai Chin", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Aksai_Chin"},
+        {"title": "2020–2021 China–India skirmishes", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/2020%E2%80%932021_China%E2%80%93India_skirmishes"}
+      ] },
+    { "id": "arunachal", "layer": "dispute", "name": "Arunachal Pradesh", "at": [93.6, 28.0], "countries": ["IND", "CHN"],
+      "text": "An Indian state that China claims as part of Tibet, calling it Zangnan.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Arunachal Pradesh", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Arunachal_Pradesh"}
+      ] },
+    { "id": "crimea", "layer": "dispute", "name": "Crimea", "at": [34.1, 45.1], "countries": ["UKR", "RUS"],
+      "text": "Annexed by Russia in 2014 after a referendum most states do not recognise. Sevastopol is the base of Russia's Black Sea Fleet.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "2014 Russian annexation of Crimea", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/2014_Russian_annexation_of_Crimea"},
+        {"title": "Sevastopol Naval Base", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Sevastopol_Naval_Base"}
+      ] },
+    { "id": "western-sahara", "layer": "dispute", "name": "Western Sahara dispute", "at": [-12.9, 24.2], "countries": ["ESH", "MAR", "DZA"],
+      "text": "Mostly controlled by Morocco, while the Algeria-backed Polisario Front wants independence. The US recognised Moroccan sovereignty in 2020, and in 2025 the UN Security Council backed Morocco's autonomy plan as the basis for talks.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Security Council Renews MINURSO Mandate", "publisher": "American Society of International Law, 19 December 2025", "url": "https://www.asil.org/ILIB/security-council-renews-minurso-mandate"},
+        {"title": "Western Sahara conflict", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Western_Sahara_conflict"}
+      ] },
+    { "id": "falklands", "layer": "dispute", "alt": ["Falklands", "Malvinas"], "name": "Falkland Islands / Malvinas", "at": [-59.5, -51.75], "countries": ["GBR", "ARG"],
+      "text": "A British overseas territory claimed by Argentina, which invaded in 1982 and lost a ten-week war.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Falkland Islands", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Falkland_Islands"},
+        {"title": "Falklands War", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Falklands_War"}
+      ] },
+    { "id": "essequibo", "layer": "dispute", "name": "Essequibo", "at": [-59.5, 6.0], "countries": ["GUY", "VEN"],
+      "text": "About 70% of Guyana, claimed by Venezuela. Large offshore oil finds since 2015 raised the stakes. Venezuela's interim government, in place since US forces captured Maduro in January 2026, keeps the claim; the International Court of Justice heard the case in May 2026.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Venezuela tells UN court that mineral-rich part of Guyana was fraudulently taken in colonial era", "publisher": "AP, via WTOP, 6 May 2026", "url": "https://wtop.com/world/2026/05/venezuela-tells-un-court-that-mineral-rich-part-of-guyana-was-fraudulently-taken-in-colonial-era/"},
+        {"title": "The Caracas Intervention and the Future", "publisher": "Bloomsbury Intelligence and Security Institute, 22 June 2026", "url": "https://bisi.org.uk/reports/the-caracas-intervention-and-the-future-gabriel-perkins"},
+        {"title": "Guyana–Venezuela territorial dispute", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Guyana%E2%80%93Venezuela_territorial_dispute"}
+      ] },
+    { "id": "golan", "layer": "dispute", "name": "Golan Heights", "at": [35.75, 33.0], "countries": ["ISR", "SYR"],
+      "text": "Taken from Syria by Israel in 1967 and annexed in 1981; in 2019 the US became the first country to recognise the annexation. Israeli troops moved into the UN buffer zone after Assad fell in December 2024.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Golan Heights", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Golan_Heights"}
+      ] },
+    { "id": "north-cyprus", "layer": "dispute", "name": "Northern Cyprus", "at": [33.6, 35.25], "countries": ["CYP", "TUR"],
+      "text": "Turkish troops have held the north of the island since 1974. Only Turkey recognises the Turkish Republic of Northern Cyprus.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Northern Cyprus", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Northern_Cyprus"}
+      ] },
+
+    { "id": "first-chain", "major": true, "layer": "line", "name": "First island chain", "at": [131.0, 31.0], "countries": ["JPN", "TWN", "PHL", "CHN", "USA"],
+      "line": [[141.5, 45.4], [141.8, 42.5], [140.7, 38.0], [139.8, 35.0], [131.0, 31.0], [129.5, 28.4], [127.7, 26.2], [123.8, 24.3], [121.5, 22.0], [121.9, 18.5], [120.3, 14.5], [119.7, 11.3], [117.2, 8.5], [116.0, 6.0], [114.5, 4.0]],
+      "text": "The arc from Japan through Taiwan and the Philippines to Borneo. US planners see it as the line that keeps China's navy close to its own coast; Chinese planners see it as the line to break through.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "First island chain", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/First_island_chain"}
+      ] },
+    { "id": "second-chain", "layer": "line", "name": "Second island chain", "at": [142.2, 27.1], "countries": ["JPN", "USA", "PLW", "IDN"],
+      "line": [[139.8, 35.0], [142.2, 27.1], [141.3, 24.8], [145.7, 15.2], [144.8, 13.4], [138.1, 9.5], [134.5, 7.4], [132.0, -1.0]],
+      "text": "Runs from Japan through the Bonin and Mariana Islands, including Guam, to Palau and New Guinea: a second, deeper line of US bases and partners.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Island chain strategy", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Island_chain_strategy"}
+      ] },
+    { "id": "giuk", "layer": "line", "name": "GIUK gap", "at": [-10.0, 63.6], "countries": ["GRL", "ISL", "GBR", "RUS"],
+      "line": [[-31.0, 68.2], [-22.5, 66.4], [-13.6, 65.1], [-6.8, 62.0], [-4.5, 58.6]],
+      "text": "The waters between Greenland, Iceland and the UK, which Russia's Northern Fleet must cross to reach the Atlantic. NATO has watched it for submarines since the Cold War.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "GIUK gap", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/GIUK_gap"}
+      ] },
+
+    { "id": "diego-garcia", "layer": "base", "name": "Diego Garcia", "at": [72.42, -7.31], "countries": ["GBR", "USA", "MUS"],
+      "text": "A US-UK base in the Chagos Islands used by long-range bombers and ships across the Indian Ocean. A 2025 treaty would hand the islands to Mauritius and lease the base back to the UK for 99 years; it is signed but not yet in force.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "UK-Mauritius Chagos sovereignty deal stalls amid fears of further delays", "publisher": "Al Jazeera, 2 October 2026", "url": "https://www.aljazeera.com/news/2026/10/2/uk-mauritius-chagos-sovereignty-deal-stalls-amid-fears-of-further-delays"},
+        {"title": "Diego Garcia", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Diego_Garcia"}
+      ] },
+    { "id": "djibouti-bases", "layer": "base", "name": "Djibouti bases", "at": [43.15, 11.55], "countries": ["DJI", "USA", "CHN", "FRA", "JPN"],
+      "text": "Hosts Camp Lemonnier, the largest US base in Africa, China's first overseas military base (opened 2017), and French, Japanese and Italian forces, all next to Bab el-Mandeb.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Foreign military bases in Djibouti", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Foreign_military_bases_in_Djibouti"},
+        {"title": "Camp Lemonnier", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Camp_Lemonnier"}
+      ] },
+    { "id": "guam", "layer": "base", "name": "Guam bases", "at": [144.93, 13.58], "countries": ["USA"],
+      "text": "A US territory with Andersen Air Force Base and a naval base, a major strategic asset for US forces in the western Pacific.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Guam", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Guam"},
+        {"title": "Andersen Air Force Base", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Andersen_Air_Force_Base"}
+      ] },
+    { "id": "okinawa", "layer": "base", "name": "Okinawa", "at": [127.77, 26.35], "countries": ["JPN", "USA"],
+      "text": "Hosts over 70% of US military facilities in Japan, including Kadena Air Base.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Okinawa’s US Military Base Burden Little Changed Since Reversion 50 Years Ago", "publisher": "Nippon.com, 25 May 2022", "url": "https://www.nippon.com/en/japan-data/h01329/"},
+        {"title": "Kadena Air Base", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Kadena_Air_Base"}
+      ] },
+    { "id": "yokosuka", "layer": "base", "name": "Yokosuka", "at": [139.67, 35.29], "countries": ["JPN", "USA"],
+      "text": "Home port of the US Seventh Fleet and the only US aircraft carrier based abroad.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "United States Fleet Activities Yokosuka", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/United_States_Fleet_Activities_Yokosuka"}
+      ] },
+    { "id": "humphreys", "layer": "base", "name": "Camp Humphreys", "at": [127.03, 36.96], "countries": ["KOR", "USA"],
+      "text": "The largest US base abroad by area, south of Seoul. About 28,500 US troops are stationed in South Korea.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Camp Humphreys", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Camp_Humphreys"}
+      ] },
+    { "id": "ramstein", "layer": "base", "name": "Ramstein", "at": [7.6, 49.44], "countries": ["DEU", "USA"],
+      "text": "Headquarters of US Air Forces in Europe and NATO's air command.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Ramstein Air Base", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Ramstein_Air_Base"}
+      ] },
+    { "id": "al-udeid", "layer": "base", "name": "Al Udeid", "at": [51.31, 25.12], "countries": ["QAT", "USA"],
+      "text": "The largest US base in the Middle East and forward headquarters of US Central Command. Iranian missiles hit it in June 2025 and again during the 2026 war, damaging its air operations centre.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Iran Severely Damaged US Air Ops Center in Qatar Soon After War Began", "publisher": "Air & Space Forces Magazine, 5 June 2026", "url": "https://www.airandspaceforces.com/us-air-operations-center-qatar-severely-damaged-iran/"}
+      ] },
+    { "id": "rota", "layer": "base", "name": "Rota", "at": [-6.35, 36.62], "countries": ["ESP", "USA"],
+      "text": "Spanish naval base hosting US destroyers that form part of NATO's missile defence in Europe.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Naval Station Rota", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Naval_Station_Rota"}
+      ] },
+    { "id": "incirlik", "layer": "base", "name": "Incirlik", "at": [35.43, 37.0], "countries": ["TUR", "USA"],
+      "text": "Turkish air base near Adana, used mainly by the US and Turkish air forces.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Incirlik Air Base", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Incirlik_Air_Base"}
+      ] },
+    { "id": "pearl-harbor", "layer": "base", "name": "Pearl Harbor", "at": [-157.95, 21.35], "countries": ["USA"],
+      "text": "Headquarters of the US Pacific Fleet. US Indo-Pacific Command is also based in Hawaii.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "United States Pacific Fleet", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/United_States_Pacific_Fleet"},
+        {"title": "United States Indo-Pacific Command", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/United_States_Indo-Pacific_Command"}
+      ] },
+    { "id": "sevastopol", "layer": "base", "name": "Sevastopol", "at": [33.52, 44.6], "countries": ["RUS", "UKR"],
+      "text": "Main base of Russia's Black Sea Fleet. Ukrainian drone and missile strikes after 2022 pushed many of its ships east to Novorossiysk.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "War in Ukraine: Russia moves warships out of Crimea as Ukrainian strikes continue", "publisher": "Euronews, 5 October 2023", "url": "https://www.euronews.com/2023/10/05/war-in-ukraine-russia-moves-warships-out-of-crimea-as-ukrainian-strikes-continue"},
+        {"title": "Sevastopol Naval Base", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Sevastopol_Naval_Base"}
+      ] },
+    { "id": "tartus", "layer": "base", "name": "Tartus", "at": [35.87, 34.89], "countries": ["RUS", "SYR"],
+      "text": "Russia's naval base in the Mediterranean, leased from Syria since 2017. After Assad fell in December 2024 the Russian navy withdrew from it; under an August 2026 memorandum Syria takes over the commercial quay and the base becomes a joint Syrian-Russian training centre.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Russia and Syria agree to turn Russian military bases into joint training centers", "publisher": "Meduza, 10 August 2026", "url": "https://meduza.io/en/news/2026/08/10/russia-and-syria-agree-to-turn-russian-military-bases-into-joint-training-centers"},
+        {"title": "Tartus naval base", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Tartus_naval_base"}
+      ] },
+    { "id": "kaliningrad", "layer": "base", "name": "Kaliningrad", "at": [20.5, 54.7], "countries": ["RUS", "POL", "LTU"],
+      "text": "A Russian exclave between Poland and Lithuania, home of the Baltic Fleet and nuclear-capable Iskander missiles. The 65 km Suwałki Gap between it and Belarus is the narrow land link between the Baltic states and the rest of NATO.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Kaliningrad Oblast", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Kaliningrad_Oblast"},
+        {"title": "Suwałki Gap", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Suwa%C5%82ki_Gap"},
+        {"title": "9K720 Iskander", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/9K720_Iskander"}
+      ] },
+    { "id": "severomorsk", "layer": "base", "name": "Severomorsk", "at": [33.42, 69.07], "countries": ["RUS"],
+      "text": "Main base of Russia's Northern Fleet, on the Kola Peninsula.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Severomorsk", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Severomorsk"}
+      ] },
+    { "id": "yulin", "layer": "base", "name": "Yulin (Hainan)", "at": [109.7, 18.2], "countries": ["CHN"],
+      "text": "Chinese naval base near Sanya on Hainan. Its eastern part, Longpo, has an underground harbour for nuclear submarines on the South China Sea.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Yulin Naval Base", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Yulin_Naval_Base"},
+        {"title": "Longpo Naval Base", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Longpo_Naval_Base"}
+      ] },
+    { "id": "ream", "layer": "base", "name": "Ream", "at": [103.63, 10.5], "countries": ["KHM", "CHN"],
+      "text": "Cambodian naval base rebuilt with Chinese money. Chinese warships have docked there since late 2023.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Chinese navy ships are first to dock at new pier at Cambodian naval base", "publisher": "AP, via NBC News, 8 December 2023", "url": "https://www.nbcnews.com/news/world/chinese-navy-ships-are-first-dock-new-pier-cambodian-naval-base-rcna128681"},
+        {"title": "Ream Naval Base", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Ream_Naval_Base"}
+      ] },
+    { "id": "cam-ranh", "layer": "base", "name": "Cam Ranh Bay", "at": [109.2, 11.95], "countries": ["VNM", "USA", "RUS"],
+      "text": "A deep-water bay in Vietnam used by US forces during the Vietnam War and by Soviet and then Russian forces until 2002. Vietnam has since rebuilt it as a port that also serves foreign navies.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Cam Ranh Base", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Cam_Ranh_Base"},
+        {"title": "Cam Ranh Bay", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Cam_Ranh_Bay"}
+      ] },
+
+    { "id": "gwadar", "layer": "port", "name": "Gwadar", "at": [62.33, 25.12], "countries": ["PAK", "CHN"],
+      "text": "Chinese-run deep-water port in Pakistan, the southern end of the China-Pakistan Economic Corridor, near the oil shipping lanes out of the Persian Gulf.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Gwadar Port", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Gwadar_Port"}
+      ] },
+    { "id": "chabahar", "layer": "port", "name": "Chabahar", "at": [60.62, 25.29], "countries": ["IRN", "IND", "AFG"],
+      "text": "Iranian port developed with India so it can trade with Afghanistan and Central Asia without crossing Pakistan.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Chabahar Port", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Chabahar_Port"}
+      ] },
+    { "id": "hambantota", "layer": "port", "name": "Hambantota", "at": [81.1, 6.12], "countries": ["LKA", "CHN"],
+      "text": "Sri Lankan port leased to China Merchants Port for 99 years in 2017 after Sri Lanka struggled to repay its loans. It is often cited in claims of Chinese debt-trap lending, which many researchers dispute.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Hambantota International Port", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Hambantota_International_Port"}
+      ] },
+    { "id": "kyaukphyu", "layer": "port", "name": "Kyaukphyu", "at": [93.55, 19.43], "countries": ["MMR", "CHN"],
+      "text": "Myanmar port where Chinese oil and gas pipelines begin, giving China a route from the Indian Ocean that avoids the Strait of Malacca.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Kyaukphyu", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Kyaukphyu"}
+      ] },
+    { "id": "piraeus", "layer": "port", "name": "Piraeus", "at": [23.63, 37.94], "countries": ["GRC", "CHN"],
+      "text": "Greece's largest port, majority-owned by China's COSCO since 2016.",
+      "asOf": "November 2026",
+      "sources": [
+        {"title": "Port of Piraeus", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Port_of_Piraeus"}
+      ] }
+  ]
+}

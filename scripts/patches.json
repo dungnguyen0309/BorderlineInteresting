@@ -1,0 +1,48 @@
+{
+  "_note": "Hand-checked overrides applied by build_data.py and build_atlas.py. Keys are ISO 3166-1 alpha-3 (XKX for Kosovo). Checked November 2026.",
+  "capitals": {
+    "ZAF": [
+      { "name": "Pretoria", "at": [28.188, -25.746], "type": "Seat of government" },
+      { "name": "Cape Town", "at": [18.424, -33.925], "type": "Seat of parliament" },
+      { "name": "Bloemfontein", "at": [26.214, -29.121], "type": "Seat of the courts" }
+    ],
+    "NRU": [
+      { "name": "Yaren", "at": [166.92, -0.547], "type": "De facto capital", "note": "Nauru has no official capital; government offices are in Yaren District." }
+    ],
+    "BOL": [
+      { "name": "Sucre", "at": [-65.262, -19.047], "type": "Constitutional capital", "note": "Seat of the judiciary." },
+      { "name": "La Paz", "at": [-68.12, -16.49], "type": "Seat of government", "note": "Seat of the executive and the legislature." }
+    ],
+    "NLD": [
+      { "name": "Amsterdam", "at": [4.9, 52.37], "type": "Constitutional capital" },
+      { "name": "The Hague", "at": [4.3, 52.08], "type": "Seat of government", "note": "Seat of government and parliament." }
+    ],
+    "MYS": [
+      { "name": "Kuala Lumpur", "at": [101.69, 3.14], "type": "Official capital" },
+      { "name": "Putrajaya", "at": [101.69, 2.93], "type": "Seat of government" }
+    ],
+    "PSE": [
+      { "name": "Ramallah", "at": [35.204, 31.904], "type": "Administrative seat", "note": "Palestine claims East Jerusalem as its capital." }
+    ]
+  },
+  "status": {
+    "VAT": "observer",
+    "PSE": "observer",
+    "TWN": "defacto",
+    "XKX": "defacto",
+    "ESH": "special",
+    "ATA": "special"
+  },
+  "aliases": {
+    "SWZ": ["Swaziland"], "MMR": ["Burma"], "GBR": ["UK", "Britain", "Great Britain"], "USA": ["US", "USA", "America"],
+    "CZE": ["Czech Republic"], "MKD": ["Macedonia"], "TUR": ["Turkey"], "CIV": ["Ivory Coast"],
+    "CPV": ["Cape Verde"], "TLS": ["East Timor"], "COD": ["Zaire", "DRC"], "LKA": ["Ceylon"], "IRN": ["Persia"],
+    "THA": ["Siam"], "BFA": ["Upper Volta"], "BEN": ["Dahomey"], "ZWE": ["Rhodesia"], "KHM": ["Kampuchea"],
+    "BWA": ["Bechuanaland"], "GHA": ["Gold Coast"], "NAM": ["South West Africa"], "TZA": ["Tanganyika"],
+    "VNM": ["Viet Nam"], "KOR": ["South Korea"], "PRK": ["North Korea"], "NLD": ["Holland"], "MDA": ["Moldavia"],
+    "BLR": ["Byelorussia"], "SUR": ["Dutch Guiana"], "GUY": ["British Guiana"], "BLZ": ["British Honduras"],
+    "MWI": ["Nyasaland"], "ZMB": ["Northern Rhodesia"], "LSO": ["Basutoland"], "DJI": ["French Somaliland"]
+  },
+  "leftDriving": ["AIA","ATG","AUS","BHS","BGD","BRB","BMU","BTN","BWA","BRN","CYM","CXR","CCK","COK","CYP","DMA","TLS","FLK","FJI","GGY","GRD","GUY","HKG","IND","IDN","IRL","IMN","JAM","JPN","JEY","KEN","KIR","LSO","MAC","MWI","MYS","MDV","MLT","MUS","MSR","MOZ","NAM","NRU","NPL","NZL","NIU","NFK","PAK","PNG","PCN","SHN","KNA","LCA","VCT","SYC","SGP","SLB","ZAF","LKA","SUR","SWZ","TZA","THA","TKL","TON","TTO","TCA","TUV","UGA","GBR","VGB","VIR","ZMB","ZWE"],
+  "doublyLandlocked": ["UZB", "LIE"]
+}

@@ -1,0 +1,865 @@
+/* .paper (a hidden element) keeps the light values in dark mode: the data colours for a globe drawn light in both themes. */
+:root, .paper {
+  --bg: #e8edf1;
+  --ocean: #d3e0e9;
+  --land: #f7f6f1;
+  --land-hover: #e9e7dd;
+  --border: #a9b2bb;
+  --coast: #8a95a0;
+  --grid: rgba(50, 70, 90, 0.1);
+  --text: #1b2026;
+  --muted: #56606b;
+  --panel: #ffffff;
+  --line: #d6dce1;
+  --halo: rgba(255, 255, 255, 0.85);
+  --edge: rgba(27, 32, 38, 0.6);
+  --hatch: rgba(27, 32, 38, 0.42);
+  --sel: #1b2026;
+  --member: #2f6fb5;
+  /* Group fills: partner (and "through a member") is amber, so it never reads as the blue sea or as a member. */
+  --partner: #ebb25f;
+  --focus: #2f6fb5;
+  --accent: #2f6fb5;
+  --field: #7b8692;
+  /* Chart series and the grey for "the rest", taken from the Reference globe's inks (water blue, capital-star red,
+     a tint's green) so the panels match the map. Validated for colour-blind separation on the panel, every pair. */
+  --s1: #276ea4;
+  --s2: #b0513a;
+  --s3: #77994e;
+  --so: #c3c2b7;
+  --out: #c9c4b6;
+  --ghost: rgba(39, 110, 164, 0.24);
+  --dock: 0px;
+  color-scheme: light;
+  /* 14px at the browser's default text size, and scaled with it; every other rem in this file is a step of this size. */
+  font: 0.875rem/1.45 "Plus Jakarta Sans", system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #171719;
+    --ocean: #121a21;
+    --land: #2a3037;
+    --land-hover: #353c44;
+    --border: #59626c;
+    --coast: #6d7782;
+    --grid: rgba(200, 215, 230, 0.07);
+    --text: #e7eaee;
+    --muted: #9a9ca3;
+    --panel: #131217;
+    --line: #2a292f;
+    --halo: rgba(18, 26, 33, 0.8);
+    --edge: rgba(0, 0, 0, 0.7);
+    --hatch: rgba(231, 234, 238, 0.4);
+    --sel: #f2f4f6;
+    --member: #5b9be0;
+    --partner: #a36d24;
+    --focus: #7fb2ea;
+    --accent: #4a8ad6;
+    --field: #6d7782;
+    --s1: #4a88c2;
+    --s2: #ba5a40;
+    --s3: #81a256;
+    --so: #4b4b47;
+    --out: #1e2226;
+    --ghost: rgba(74, 136, 194, 0.3);
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; scrollbar-width: thin; scrollbar-color: var(--field) transparent; }
+[hidden] { display: none !important; }
+html, body { margin: 0; height: 100%; overflow: hidden; overscroll-behavior: none; background: var(--bg); }
+::selection { background: color-mix(in srgb, var(--member) 30%, transparent); }
+input, select { caret-color: var(--member); }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+p, li { text-wrap: pretty; }
+h1, h2, h3 { text-wrap: balance; }
+
+#globe { position: fixed; inset: 0; display: block; touch-action: none; cursor: grab; }
+/* Map tiles, drawn under the globe's own canvas. */
+#tiles { position: fixed; inset: 0; display: block; pointer-events: none; }
+#globe:active { cursor: grabbing; }
+#globe.pointer { cursor: pointer; }
+#globe:focus-visible { outline-offset: -4px; }
+/* The paper globe stays light in dark mode (app.js sets paper-globe): toned down a little so it does not glare on the
+   dark page. The lettering keeps its contrast (water names on their halo 5.6:1, country names 8.7:1). */
+@media (prefers-color-scheme: dark) { body.paper-globe #globe { filter: brightness(0.92); } }
+/* Street-map tiles (Political zoomed in, Roads, Postal codes) have no dark style: inverted with their hues turned back,
+   so land is dark and water stays blue, and the selected outline and the names keep their contrast. */
+@media (prefers-color-scheme: dark) { body.dark-tiles #tiles { filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.85); } }
+
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+a { color: inherit; text-underline-offset: 2px; }
+
+/* Header and search */
+.bar { position: fixed; top: 16px; left: 16px; display: flex; align-items: flex-start; gap: 10px; z-index: 3; }
+.bar h1 {
+  display: flex; align-items: center; gap: 8px;
+  margin: 0; padding: 0 12px; font-size: 1.35714rem; font-weight: 600; line-height: 34px; letter-spacing: -0.01em;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+}
+.search { position: relative; }
+#q {
+  width: 280px; height: 36px; padding: 0 12px; font: inherit; color: inherit;
+  background: var(--panel); border: 1px solid var(--field); border-radius: 8px;
+}
+#q::placeholder { color: var(--muted); }
+/* Taps pass through the message to the controls underneath; only the retry button takes them. */
+#status { position: absolute; top: 40px; left: 0; width: max-content; max-width: 340px; overflow-wrap: anywhere; margin: 0; font-size: 0.89286rem; color: var(--muted); pointer-events: none; }
+#status button { pointer-events: auto; }
+#status:empty { display: none; }
+#status:not(:empty) { padding: 6px 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; }
+/* Desktop and tablets: the name, the search and Hot spots in one bar, split by hairlines; the search keeps its own
+   field border. The bar stays 36px tall (52px on touch screens), so the cards below keep their places. */
+@media (min-width: 721px) {
+  .bar { align-items: center; gap: 0; padding: 3px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+  .bar h1 { line-height: 28px; padding: 0 12px 0 9px; margin-right: 8px; background: none; border: 0; border-right: 1px solid var(--line); border-radius: 0; }
+  #q { height: 28px; border-radius: 6px; }
+  .bar #qKey { top: 4px; }
+  .bar .hot-toggle { height: 28px; margin-left: 8px; padding: 0 9px 0 12px; background: none; border: 0; border-left: 1px solid var(--line); border-radius: 0; }
+  .bar #status, .bar #results { top: 36px; }
+}
+
+/* Controls */
+/* Only an open section's body scrolls, so the Map, Places, Help and Sources headers stay in view
+   (app.js closes other sections when opening one would overflow the card). */
+#controls {
+  position: fixed; top: 68px; z-index: 2; /* above the globe canvas, which comes later in the DOM */ left: 16px; width: 290px; overflow: auto;
+  display: flex; flex-direction: column;
+  max-height: calc(100vh - 84px - var(--legend-h, 0px)); min-height: min(125px, calc(100vh - 84px));
+  /* dvh: the screen actually visible, on phones whose toolbar never hides (the page itself does not scroll). */
+  max-height: calc(100dvh - 84px - var(--legend-h, 0px)); min-height: min(125px, calc(100dvh - 84px));
+}
+#controls details { flex: none; }
+/* Each open section keeps a usable floor; the long Places list absorbs the squeeze.
+   Scroll padding keeps a focused item clear of the sticky header. */
+#controls details[open] { flex: 0 1 auto; min-height: min(140px, calc(100vh - 84px - var(--legend-h, 0px) - 124px)); min-height: min(140px, calc(100dvh - 84px - var(--legend-h, 0px) - 124px)); overflow: auto; scroll-padding-top: 44px; }
+#controls details[open] > summary { position: sticky; top: 0; z-index: 1; background: var(--panel); }
+details { border-top: 1px solid var(--line); padding: 0 14px; }
+details:first-child { border-top: 0; }
+summary {
+  margin: 0 -14px; padding: 10px 14px; font-weight: 600; cursor: pointer;
+  list-style: none; display: flex; align-items: center; justify-content: space-between;
+}
+summary::-webkit-details-marker { display: none; }
+summary::after {
+  content: ""; flex: none; width: 7px; height: 7px; border: solid var(--muted); border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg) translate(-2px, -2px); transition: transform 0.15s ease-out;
+}
+details[open] > summary::after { transform: rotate(-135deg) translate(-1px, -1px); }
+summary:focus-visible { outline-offset: -2px; border-radius: 6px; }
+details[open] > :last-child { margin-bottom: 14px; }
+
+fieldset { border: 0; padding: 0; margin: 0 0 12px; min-width: 0; }
+legend, .field { display: block; font-weight: 500; color: var(--muted); margin-bottom: 4px; padding: 0; }
+/* Places: a layer's row (tick, symbol, name, count) and the button that folds open its list. */
+.lyr { display: flex; align-items: center; gap: 4px; }
+.lyr:not(:has(.fold)) { padding-right: 34px; } /* counts line up with the rows that have a list button */
+#placeList label { flex: 1; display: flex; align-items: center; gap: 9px; min-height: 30px; cursor: pointer; }
+#placeList input { margin: 0; accent-color: var(--member); }
+.fold { width: 30px; height: 30px; padding: 0; display: inline-grid; place-items: center; border: 0; background: none; color: var(--muted); }
+.fold .chev { width: 10px; height: 10px; transition: transform 0.15s ease-out; }
+.fold[aria-expanded="true"] .chev { transform: rotate(180deg); }
+.count { margin-left: auto; color: var(--muted); }
+.mk { width: 14px; height: 14px; flex: none; overflow: visible; }
+
+select {
+  width: 100%; height: 36px; padding: 0 8px; font: inherit; color: inherit;
+  background: var(--panel); border: 1px solid var(--field); border-radius: 6px;
+}
+#photoDay input { font: inherit; }
+#spQ { height: 36px; font: inherit; }
+/* The first and newest day, and + and − at the zoom limits: the button stays focusable, so focus is not dropped
+   when it is the one pressed. */
+#photoDay [aria-disabled="true"], .zoom [aria-disabled="true"] { opacity: 0.45; cursor: default; }
+
+.plist { list-style: none; margin: 0 0 6px; padding: 0 0 0 45px; } /* under the layer's name */
+.plist button { width: 100%; text-align: left; border: 0; border-radius: 4px; padding: 4px 6px; margin: 0 -6px; background: none; }
+@media (hover: hover) { .plist button:hover { background: var(--land-hover); } }
+
+.sources { margin: 0; padding-left: 18px; color: var(--muted); font-size: 0.89286rem; }
+.sources li { margin-bottom: 6px; }
+.sources ul.plain { margin-top: 2px; }
+.sources ul.plain li { margin-bottom: 2px; }
+#sourcesPanel .note { margin: 0 0 6px; }
+.src-h { margin: 14px 0 6px; font-size: 0.92857rem; font-weight: 600; }
+summary + .src-h { margin-top: 4px; }
+.src-g { margin: 8px 0 4px; font-size: 0.89286rem; font-weight: 500; }
+.src-name { color: var(--text); }
+
+/* Legend */
+#legendCard {
+  position: fixed; left: 16px; bottom: 16px; width: 290px; padding: 12px 14px;
+  /* Long keys (time zones, hardiness zones, geology) scroll inside the card, so the controls above keep their room. */
+  max-height: min(calc(100vh - 68px - 125px - 28px), 44vh); overflow: auto;
+  max-height: min(calc(100dvh - 68px - 125px - 28px), 44dvh);
+}
+/* Title on its own line, the two actions under it, so the title never wraps around them. */
+.lhead { display: grid; gap: 8px; margin-bottom: 10px; }
+.lhead p { margin: 0; }
+.lhead p span { color: var(--muted); }
+.ltext { margin: 0 0 8px; color: var(--muted); font-size: 0.89286rem; }
+.swatches { list-style: none; margin: 0; padding: 0; }
+.swatches li { display: flex; align-items: center; gap: 8px; padding: 1px 0; font-size: 0.89286rem; }
+/* A hairline round every swatch, so pale and near-background colours still read as keys. */
+.swatches i { width: 16px; height: 12px; border-radius: 2px; background: var(--c); flex: none; outline: 1px solid color-mix(in srgb, var(--text) 45%, transparent); outline-offset: -1px; }
+/* No data: the same dot pattern the globe draws, never a pale colour that could pass for the lowest class. */
+.swatches i.nodata { background: radial-gradient(circle, var(--hatch) 0.9px, transparent 1.1px) 0 0 / 5px 5px, var(--land); outline-color: color-mix(in srgb, var(--text) 58%, transparent); }
+.note { color: var(--muted); font-size: 0.89286rem; margin: 8px 0 0; }
+
+/* Info panel */
+#info { position: fixed; top: 16px; right: 16px; width: 372px; max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); overflow: auto; padding: 16px 18px 18px; }
+#grab { display: none; }
+#info h2 { margin: 0 0 2px; font-size: 1.5rem; line-height: 1.25; font-weight: 600; letter-spacing: -0.01em; }
+#info h2:focus { outline: none; }
+/* The title takes focus for screen readers when the panel opens; the ring shows only when keys led there (app.js). */
+.keyed #info h2:focus-visible { outline: 2px solid var(--focus); }
+/* Its own block beside the floated Close, so the focus ring stops short of the button. */
+#info h2 { display: flow-root; }
+/* Section headings rank above the 12.5px muted notes and "Show figures" (sentence case, no tracking). */
+#info h3 { margin: 18px 0 6px; font-size: 1rem; font-weight: 600; color: var(--text); }
+#info p { margin: 6px 0; }
+.kind { display: flex; align-items: center; gap: 7px; color: var(--muted); margin: 0 0 4px !important; }
+.sub { color: var(--muted); margin: 0 0 12px !important; }
+/* Sticky, so the close button stays in reach while the panel scrolls. */
+#close { position: sticky; top: 0; float: right; margin: -6px -8px 0 8px; z-index: 3; }
+
+/* The key figures as one line under the subtitle. */
+.keyline { margin: -6px 0 12px !important; }
+
+/* Seven sections in one row over a single rule; the panel wraps them to two rows below (#info .tabs) except on the
+   narrowest phones and short landscape screens. The row scrolls sideways when they do not fit (a swipe, the wheel or
+   the arrow keys); a fade at an edge says more tabs lie that way (.more-l and .more-r, set by app.js). The strip clips,
+   so the focus ring sits inside the tab, which has side padding to keep it off the letters. */
+.tabs { display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none; margin-bottom: 12px; border-bottom: 1px solid var(--line); }
+.tabs::-webkit-scrollbar { display: none; }
+.tabs [role="tab"] {
+  flex: none; border: 0; border-radius: 0; background: none; padding: 8px 4px 0; color: var(--muted); text-align: left;
+}
+.tabs [role="tab"]:focus-visible { outline-offset: -2px; }
+/* The edges (a fade and a chevron) are sticky ends of the strip; the negative margins cancel their width and the gap. */
+/* The solid part (30px) is wider than any glyph, so the letter the strip cuts at its edge is always hidden whole. */
+.tabs .edge {
+  position: sticky; z-index: 1; flex: none; display: flex; align-items: flex-end; width: 40px; padding-bottom: 9px; color: var(--muted);
+  opacity: 0; pointer-events: none; transition: opacity 0.15s ease-out;
+}
+.tabs .edge svg { width: 12px; height: 12px; }
+.tabs .edge:first-child { left: 0; margin-right: -50px; background: linear-gradient(to right, var(--panel) 75%, transparent); }
+.tabs .edge:first-child svg { transform: rotate(90deg); }
+.tabs .edge:last-child { right: 0; margin-left: -50px; justify-content: flex-end; background: linear-gradient(to left, var(--panel) 75%, transparent); }
+.tabs .edge:last-child svg { transform: rotate(-90deg); }
+.tabs.more-l .edge:first-child, .tabs.more-r .edge:last-child { opacity: 1; pointer-events: auto; cursor: pointer; }
+.tabs [role="tab"] span { display: inline-block; padding-bottom: 6px; border-bottom: 2px solid transparent; transition: border-color 0.15s ease-out; }
+.tabs [role="tab"][aria-selected="true"] span { border-bottom-color: var(--accent); }
+[role="tabpanel"] > h3:first-child { margin-top: 4px; }
+@media (hover: hover) { .tabs [role="tab"]:hover { background: none; color: var(--text); } }
+.tabs [role="tab"][aria-selected="true"] { color: var(--text); font-weight: 500; }
+
+dl.facts { display: grid; grid-template-columns: minmax(0, 9.5em) 1fr; gap: 5px 14px; margin: 0; }
+dl.facts dt { color: var(--muted); }
+dl.facts dd { margin: 0; }
+.yr { color: var(--muted); font-size: 0.89286rem; }
+.nowrap { white-space: nowrap; }
+.lede { line-height: 1.55; }
+
+/* Religion shares: label, a thin track with the true share, the figure right-aligned. */
+.bars { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.bars li { display: grid; grid-template-columns: minmax(0, 9.5em) 1fr 5.6em; align-items: center; gap: 10px; }
+.bl { overflow-wrap: break-word; }
+.bt { height: 6px; background: var(--rule, var(--line)); border-radius: 3px; overflow: hidden; }
+.bt i { display: block; height: 100%; background: var(--member); }
+.bv { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.lbtns { display: flex; gap: 8px; flex: none; }
+.sortbar { display: flex; gap: 8px; margin-bottom: 10px; }
+.sortbar button { border: 0; border-bottom: 1px solid transparent; border-radius: 0; padding: 4px 0; background: none; color: var(--muted); }
+.sortbar [aria-pressed="true"] { border-bottom-color: var(--accent); color: var(--text); }
+table.rank { width: 100%; border-collapse: collapse; }
+.rank th { font-weight: 400; color: var(--muted); text-align: left; padding: 4px 6px 6px 0; }
+.rank td { padding: 4px 6px 4px 0; border-top: 1px solid var(--line); vertical-align: baseline; }
+.rank .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rank td.num:first-child { color: var(--muted); width: 2.5em; } /* the rank column only; group lists have none */
+.rank td .sw { margin-right: 6px; outline: 1px solid color-mix(in srgb, var(--text) 45%, transparent); outline-offset: -1px; }
+button.link { border: 0; background: none; padding: 0; text-align: left; color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+@media (hover: hover) { button.link:hover { background: none; text-decoration-color: currentColor; } }
+
+.divlist { columns: 2; column-gap: 16px; margin: 12px 0 0; padding: 0; list-style: none; }
+.divlist li { break-inside: avoid; padding: 2px 0; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+button {
+  font: inherit; color: inherit; background: var(--panel); border: 1px solid var(--line);
+  border-radius: 6px; padding: 4px 10px; cursor: pointer;
+  touch-action: manipulation; transition: background-color 0.15s ease-out, border-color 0.15s ease-out;
+}
+@media (hover: hover) { button:hover { background: var(--land-hover); } } /* touch: no tint left behind after a tap */
+button:active { filter: brightness(0.94); }
+.chips button { display: inline-flex; align-items: center; gap: 7px; min-height: 30px; }
+.chips button.group .sw { width: 12px; height: 10px; border-radius: 2px; background: var(--member); }
+.chips button.group[aria-pressed="true"] { border-bottom-color: var(--accent); }
+button.icon { width: 32px; height: 32px; padding: 0; display: inline-grid; place-items: center; }
+.ic { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; }
+.empty { color: var(--muted); }
+
+/* Zoom, hint, tooltip */
+.zoom { position: fixed; right: 16px; bottom: 16px; display: flex; gap: 8px; transition: right 0.2s ease-out; }
+.zoom button { height: 36px; }
+.zoom button.icon { width: 36px; }
+body.has-info .zoom { right: 404px; }
+
+/* Sits above the zoom row and never takes clicks. */
+#hint {
+  position: fixed; left: var(--free-x, 50%); bottom: 64px; transform: translateX(-50%); margin: 0; pointer-events: none;
+  width: max-content; max-width: min(calc(100% - 24px), calc(var(--free-w, 100vw) - 24px)); padding: 5px 10px; text-align: center;
+  color: var(--muted); font-size: 0.89286rem; background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+  transition: opacity 0.3s ease-out;
+}
+#hint.gone { opacity: 0; }
+body.has-info #hint { display: none; }
+/* Desktop: plain text in the free ground under the controls card, off the globe (app.js sets hint-col when it fits). */
+body.hint-col #hint { left: 16px; top: var(--hint-top); bottom: auto; transform: none; width: 290px; max-width: none; padding: 0 14px;
+  text-align: left; background: none; border: 0; }
+/* Where that ground is taken (a long key), there is no hint: Help has the gestures. */
+@media (min-width: 721px) { body:not(.hint-col) #hint { display: none; } }
+
+#tip {
+  position: fixed; left: 0; top: 0; z-index: 4; pointer-events: none; padding: 4px 8px; font-size: 0.89286rem; max-width: 320px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+}
+#tip small { display: block; color: var(--muted); font-size: 0.89286rem; }
+
+/* Narrow desktops and tablets in portrait and landscape: the info panel starts below the header so the search box
+   and Hot spots cannot cover it (the header ends at about x = 675, the panel starts 388px from the right edge), and
+   the zoom row moves above the legend instead of running into it. */
+@media (min-width: 721px) and (max-width: 1100px) {
+  /* The info panel stops above the zoom row, which sits under it in the bottom-right corner. */
+  #info { top: 68px; max-height: calc(100vh - 112px - var(--zoom-b)); max-height: calc(100dvh - 112px - var(--zoom-b)); }
+  body.has-info #status { max-width: calc(100vw - 542px); }
+  body.has-info .zoom { right: 16px; bottom: 16px; }
+}
+
+@media (max-width: 720px) {
+  .bar { right: 12px; left: 12px; top: 8px; gap: 8px; }
+  .bar h1 { line-height: 42px; font-size: 1.21429rem; padding: 0 10px; }
+  .search { flex: 1; min-width: 0; }
+  #q { width: 100%; height: 44px; }
+  #status { top: 48px; max-width: 100%; }
+  #controls {
+    top: 58px; left: 12px; right: 12px; width: auto; display: flex; flex-wrap: wrap;
+    max-height: min(45vh, calc(100vh - 66px - var(--dock)));
+    max-height: min(45dvh, calc(100dvh - 66px - var(--dock)));
+  }
+  #controls { flex-direction: row; min-height: 0; scroll-padding-top: 92px; overflow-anchor: none; }
+  #controls details[open] { min-height: 0; }
+  body.ctl-open #info .kind { display: none; }
+  /* Collapsed, the four sections share one row; the open one (moved last by app.js) takes the full width.
+     The collapsed row and the open section's header stay put while its list scrolls. */
+  #controls details { flex: 1 1 0; min-width: 0; border-top: 0; border-left: 1px solid var(--line); }
+  #controls details:not([open]) { position: sticky; top: 0; z-index: 2; background: var(--panel); }
+  #controls details:first-child { border-left: 0; }
+  #controls details[open] { flex: 1 1 100%; overflow: visible; border-left: 0; border-top: 1px solid var(--line); }
+  #controls details[open] > summary { top: 44px; }
+  summary { min-height: 44px; }
+  #placeList label, .plist button, .chips button, .tabs [role="tab"], #clearMode, #retry { min-height: 44px; }
+  .fold { width: 44px; height: 44px; }
+  .lyr:not(:has(.fold)) { padding-right: 48px; }
+  /* While a control section is open, the sheet shrinks to its title bar. */
+  body.ctl-open #info, body.ctl-open #info.country { height: auto; max-height: 64px; overflow: hidden; }
+  body.has-info #legendCard { display: none; }
+  select { height: 44px; }
+  #legendCard { left: 8px; right: 8px; bottom: 8px; width: auto; max-height: 34vh; max-height: 34dvh; overflow: auto; }
+  #legendCard .swatches { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px; }
+  #legendCard .ltext { display: none; }
+  #info {
+    top: auto; bottom: 0; left: 0; right: 0; width: auto; max-height: 52vh; max-height: 52dvh;
+    border-radius: 12px 12px 0 0; border-bottom: 0; z-index: 2;
+  }
+  #info.country { height: 52vh; height: 52dvh; }
+  .zoom, body.has-info .zoom { right: 12px; bottom: calc(12px + var(--dock)); }
+  body.ctl-open .zoom { display: none; }
+  /* Clear of the zoom column at the right edge. */
+  #hint { left: 50%; bottom: calc(68px + var(--dock)); max-width: calc(100% - 128px); }
+  body.has-info #hint { display: none; }
+  body.hint-off #hint { visibility: hidden; } /* it would sit on the globe (app.js) */
+  button.icon, .zoom button { min-width: 44px; min-height: 44px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; }
+}
+
+/* Product mark beside the name. */
+.mark { width: 18px; height: 18px; flex: none; }
+
+/* Search results under the box; Ctrl K / ⌘K hint inside it until focused. */
+#q { padding-right: 4.15em; } /* room for the hint at any text size */
+#qKey {
+  position: absolute; right: 9px; top: 8px; padding: 0 5px; pointer-events: none;
+  font: 0.89286rem/1.28571rem "Plus Jakarta Sans", system-ui, sans-serif; color: var(--muted); border: 1px solid var(--line); border-radius: 4px;
+}
+#qKey:empty, .search:focus-within #qKey, #q:not(:placeholder-shown) ~ #qKey { display: none; }
+#results {
+  position: absolute; top: 40px; left: 0; z-index: 5; width: 340px; max-height: 60vh; max-height: 60dvh; overflow: auto;
+  margin: 0; padding: 4px; list-style: none; background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+}
+#results li { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 6px 8px; border-radius: 6px; cursor: pointer; }
+#results li[aria-selected="true"] { background: var(--land-hover); }
+#results small, #results .ok { color: var(--muted); font-size: 0.89286rem; }
+#results .ok { white-space: nowrap; }
+#results li.more { cursor: default; color: var(--muted); font-size: 0.89286rem; }
+/* While the list is open its last row carries the message; the status line stays for screen readers. */
+#results:not([hidden]) ~ #status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); padding: 0; border: 0; }
+
+/* Countries filter */
+#mapType, #mode, #group { margin-bottom: 12px; }
+.seg label { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; margin-right: 14px; cursor: pointer; }
+.seg input { margin: 0; accent-color: var(--member); }
+.scope-note { display: none; margin: -6px 0 12px !important; }
+#scopeSet:has(input[value="un"]:checked) + .scope-note { display: block; }
+
+.acts { display: flex; gap: 8px; margin: -4px 0 14px; }
+.acts [aria-pressed="true"] { border-color: var(--accent); }
+/* Rank and antipode links: body text colour with a clear underline, so they read as controls, not as the year. */
+button.rk { border: 0; background: none; padding: 0; font: inherit; color: var(--text); text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 55%, transparent); text-underline-offset: 2px; }
+@media (hover: hover) { button.rk:hover { background: none; text-decoration-color: currentColor; } }
+button.link { text-decoration-color: color-mix(in srgb, currentColor 45%, transparent); }
+.rank tr.hl td { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.bars2 { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0 16px; }
+
+/* Charts */
+.chart { margin: 4px 0 0; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; font-size: 0.78571rem; }
+.chart text { fill: var(--muted); font-variant-numeric: tabular-nums; }
+.chart .gl { stroke: var(--line); }
+.chart .axis { stroke: var(--border); }
+.chart .ln { fill: none; stroke-width: 2; stroke-linejoin: round; }
+.chart .cur { stroke: var(--muted); stroke-dasharray: 2 2; }
+.chart .dot { stroke: var(--panel); stroke-width: 2; }
+.ln.s1 { stroke: var(--s1); }
+.ln.s2 { stroke: var(--s2); }
+rect.s1, .dot.s1, .sw.s1 { fill: var(--s1); background: var(--s1); }
+rect.s2, .dot.s2, .sw.s2 { fill: var(--s2); background: var(--s2); }
+rect.s3, .sw.s3 { fill: var(--s3); background: var(--s3); }
+rect.so, .sw.so { fill: var(--so); background: var(--so); }
+.sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; flex: none; }
+figcaption { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; margin-top: 4px; font-size: 0.89286rem; font-variant-numeric: tabular-nums; }
+/* A one-line chart's caption is empty until a year is chosen; the line is kept so the panel does not jump. */
+.chart figcaption { min-height: 1.45em; }
+figcaption span { display: inline-flex; align-items: center; gap: 6px; }
+svg.mix { display: block; width: 100%; height: auto; }
+.mixkey { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 3px; }
+.mixkey li { display: flex; align-items: center; gap: 8px; }
+.mixkey .bv { margin-left: auto; }
+/* Trend charts take a tap or a sideways drag (vertical swipes still scroll the panel) and the arrow keys. */
+svg[data-chart] { touch-action: pan-y; cursor: crosshair; border-radius: 4px; }
+svg[data-chart]:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+/* A mouse click or tap focuses the chart too; only keyboard focus gets a ring. */
+svg[data-chart]:focus:not(:focus-visible) { outline: none; }
+#info details { border-top: 0; padding: 0; }
+#info summary { margin: 0; padding: 6px 0; justify-content: flex-start; gap: 10px; font-weight: 500; }
+#info details.figs summary { font-size: 0.89286rem; color: var(--muted); }
+#info details.figs[open] summary { color: var(--text); }
+#info details.figs table { margin-top: 4px; }
+.figs th.num { white-space: normal; overflow-wrap: anywhere; }
+.figs th[scope="row"] { white-space: nowrap; }
+#info details.sect { margin-top: 16px; border-top: 1px solid var(--line); }
+#info details.sect > summary { padding: 10px 0; }
+#info details[open] > :last-child { margin-bottom: 4px; }
+.rank th[scope="row"] { color: var(--text); padding-top: 4px; border-top: 1px solid var(--line); }
+/* Capped lists: the first few items, then "Show all". */
+.capped.cap6 > :nth-child(n + 7), .capped.cap3 > :nth-child(n + 4) { display: none; }
+button.more { margin-top: 6px; font-size: 0.89286rem; color: var(--muted); }
+ul.plain { list-style: none; margin: 0; padding: 0; }
+ul.lines li { padding: 3px 0; }
+.hint-line { margin: -2px 0 8px !important; }
+.help { display: grid; gap: 2px; margin: 0 0 4px; font-size: 0.89286rem; }
+.help dt { font-weight: 500; margin-top: 6px; }
+.help dd { margin: 0; color: var(--muted); }
+kbd.qk { font: inherit; padding: 0 4px; border: 1px solid var(--line); border-radius: 4px; }
+
+/* Compare */
+.pick { display: flex; gap: 8px; margin-bottom: 14px; }
+.pick select { flex: 1; min-width: 0; }
+.cmp th[scope="row"] { color: var(--text); padding-right: 10px; border-top: 0; }
+.cmp tbody tr { border-top: 1px solid var(--line); }
+/* Fixed layout: the two value columns get equal widths, so a bar's length means the same in both,
+   and long country names wrap instead of pushing the table out of the panel. */
+.cmp { table-layout: fixed; }
+.cmp thead th:first-child { width: 46%; } /* "Military spending, % of GDP" on two lines at most */
+/* The shared year spans the table, so the first column's header does not wrap to three lines. */
+.cmp caption { caption-side: top; text-align: left; padding-bottom: 4px; }
+.cmp thead th, .cmp thead th.num { white-space: normal; overflow-wrap: anywhere; vertical-align: bottom; }
+.cmp td.num { white-space: normal; }
+.cmp thead .sw { margin-right: 5px; }
+/* Each value sits over its own bar, scaled to the larger of the pair. */
+.vb { display: flex; justify-content: flex-end; margin-top: 3px; }
+.vb i { display: block; height: 4px; border-radius: 2px 0 0 2px; }
+.vb i.s1 { background: var(--s1); }
+.vb i.s2 { background: var(--s2); }
+
+/* True-size readout, above the zoom row in the middle of the free space. */
+#ghostCard {
+  position: fixed; left: var(--free-x, 50%); bottom: 64px; transform: translateX(-50%); z-index: 3;
+  /* Never wider than the free area between the side panels (--free-w is set by app.js). */
+  width: max-content; max-width: min(440px, calc(100% - 24px), calc(var(--free-w, 100vw) - 24px)); padding: 10px 12px;
+  display: flex; align-items: center; gap: 12px;
+}
+#ghostCard p { margin: 0; }
+#ghostCard .yr { display: block; margin-top: 2px; }
+.native { font-size: 0.89286rem; }
+@media (max-width: 720px), (pointer: coarse) {
+  #qKey { display: none; }
+  #q { padding-right: 12px; }
+}
+@media (max-width: 720px) {
+  /* The list and the notice span the whole bar, not just the search box, so long names fit. */
+  .search { position: static; }
+  #results { width: auto; left: 0; right: 0; top: 50px; }
+  #status { top: 50px; }
+  /* The kind goes under the name, so a long name gets the full width and every row is a 44px target. */
+  #results li { min-height: 44px; flex-direction: column; align-items: flex-start; justify-content: center; gap: 0; }
+  #results li.more { min-height: 0; }
+  /* Clear of the zoom column; hidden while the sheet is tall (the sheet covers the globe, and it has Hide true size). */
+  /* A one-line strip docked on the sheet, clear of the zoom column; app.js keeps the globe above it. */
+  #ghostCard { left: 12px; right: 64px; width: auto; max-width: none; transform: none; bottom: calc(8px + var(--dock) + var(--attrib-h, 0px)); padding: 6px 8px 6px 12px; }
+  #info.tall ~ #ghostCard { display: none; }
+  .acts button { min-height: 44px; }
+}
+
+@media (hover: hover) { .sortbar button:hover { background: none; color: var(--text); } }
+@media (max-width: 720px) {
+  .tabs [role="tab"] { display: flex; align-items: flex-end; }
+  .sortbar button, .rank button.link { min-height: 44px; }
+
+  /* The sheet: a handle switches between half and nearly full height; the tab row stays pinned while
+     a section scrolls (clear of the sticky close button). */
+  #grab {
+    /* touch-action none: otherwise the browser takes a drag on the handle as a scroll of the sheet. */
+    touch-action: none; display: block; position: sticky; top: -16px; z-index: 2; width: 100%; height: 24px; margin: -16px 0 2px; padding: 0;
+    border: 0; border-radius: 0; background: var(--panel); cursor: pointer;
+  }
+  #grab::before { content: ""; position: absolute; left: 0; right: 56px; top: 0; height: 44px; } /* a 44px hit area, clear of the sticky Close (the sheet clips anything above its top edge) */
+  #grab span { display: block; width: 40px; height: 4px; margin: 0 auto; border-radius: 2px; background: var(--field); }
+  /* Tall stops below the controls row, so the section headers stay usable, and below the credit line, which sits
+     on the sheet's top edge (OpenStreetMap's credit must stay with the map). */
+  #info.tall { max-height: calc(100vh - 112px - var(--attrib-h, 0px)); max-height: calc(100dvh - 112px - var(--attrib-h, 0px)); }
+  #info.country.tall { height: calc(100vh - 112px - var(--attrib-h, 0px)); height: calc(100dvh - 112px - var(--attrib-h, 0px)); }
+  #info .tabs { top: 6px; }
+  #info .backrow { top: 6px; margin-top: 0 !important; padding-top: 4px; }
+  /* Phones in landscape and 200% zoom: start compact, with the tabs right under the title. */
+  @media (max-height: 500px) {
+    #info:not(.tall) .acts { display: none; }
+    /* True size on: its card has no room here, so the row with Hide true size stays. */
+    #info:not(.tall):has([data-ghost][aria-pressed="true"]) .acts { display: flex; }
+  }
+  /* Zoom stays one-pointer reachable (pinch is not required) but as a slim column at the edge. */
+  .zoom { flex-direction: column; gap: 8px; }
+}
+
+/* Phones: four collapsed section headers share the row, so tighten their padding. */
+@media (max-width: 720px) {
+  #controls details:not([open]) > summary { padding-inline: 10px; gap: 4px; }
+  body.no-zoom .zoom { display: none; }
+}
+/* Short landscape screens with the side panel: the tabs stay pinned. */
+@media (min-width: 721px) and (max-height: 500px) {
+  #info .tabs { padding-top: 6px; }
+  /* Phone landscape: the panel runs from under the header to the bottom, and the zoom buttons stand as a column
+     between the controls card and the panel (at 844px: 396-440, between 306 and 456). */
+  #info { top: 68px; max-height: calc(100vh - 68px - var(--zoom-b)); max-height: calc(100dvh - 68px - var(--zoom-b)); }
+  body.has-info .zoom { right: 404px; flex-direction: column; gap: 8px; }
+}
+/* Touch screens of any width get 44px targets. */
+@media (pointer: coarse) {
+  button.icon, .zoom button, .tabs [role="tab"], button.more, .acts button { min-width: 44px; min-height: 44px; }
+  .chips button, .sortbar button, .rank button.link, #placeList label, .plist button, summary, select, #listMode, #clearMode, .seg label { min-height: 44px; }
+  .fold { width: 44px; height: 44px; }
+  .lyr:not(:has(.fold)) { padding-right: 48px; }
+  button.more { display: inline-flex; align-items: center; }
+  .kb { display: none; }
+}
+/* A list opened from a country's rank keeps its way back pinned at the top while the list scrolls.
+   In a country panel the tab row is what stays pinned, so the way back scrolls away (Close and Esc still go back). */
+.backrow { position: sticky; top: -16px; z-index: 1; margin: -16px 0 6px !important; padding: 14px 40px 6px 0; background: var(--panel); }
+/* The list opens scrolled to the country's row, past its title: the pinned row names the figure. */
+.backrow .what { margin-left: 10px; color: var(--muted); }
+#infoBody:has(.tabs) .backrow { position: static; }
+/* Keyboard focus never lands under the pinned rows. The inset is on the content, not the scroller, so
+   focusing a pinned control (a tab, Close, the handle) does not scroll the panel. */
+#infoBody > :not(.tabs):not(.backrow), #infoBody > :not(.tabs):not(.backrow) * { scroll-margin-top: 100px; }
+/* Room on the right for the sticky Close, which otherwise covers right-aligned figures and Swap as they scroll past. */
+#infoBody > table.rank { width: calc(100% - 26px); }
+/* A long column header ("% of goods exports, 2025") wraps rather than pushing the table under Close. */
+#infoBody > table.rank thead th.num { white-space: normal; }
+.pick { margin-right: 26px; }
+/* Close is 44px on phones, so the room for it is wider. Compare takes the full width there instead: its figures and
+   Swap need every pixel, and they only pass under Close while the sheet scrolls. */
+@media (max-width: 720px) { #infoBody > table.rank { width: calc(100% - 36px); } #infoBody > table.cmp { width: 100%; } .pick { margin-right: 0; } }
+
+/* True-size card: the full sentence on wide screens, one short line on phones and short screens. */
+#ghostText .short { display: none; }
+@media (max-width: 720px), (max-height: 500px) {
+  #ghostText .full { display: none; }
+  #ghostText .short { display: inline; }
+}
+body.no-ghostcard #ghostCard { display: none; }
+
+/* The tab row stays pinned while a section scrolls, at every width. It stops 48px short of the edge, so the sticky
+   Close never sits over a tab; the shadows fill that gap with the panel colour (content scrolling under it stays
+   hidden) and carry the rule on to the edge. */
+#info .tabs { position: sticky; top: -16px; z-index: 1; background: var(--panel); padding-top: 6px; margin-right: 48px; box-shadow: 48px -1px var(--panel), 48px 0 var(--line); }
+/* Phones: once pinned under the handle, the tab row and the way back sit above its 44px hit area (Close stays on top). */
+@media (max-width: 720px) { #info .tabs { top: 6px; z-index: 2; } #info .backrow { z-index: 2; } }
+/* The seven tabs wrap to two rows instead of scrolling, three beside Close and four under it, each row on its own
+   rule (the ::before is the break and the first rule). The order keeps the reading order. Only the narrowest phones
+   and short landscape screens keep the scrolling row. */
+@media (min-width: 360px) and (min-height: 501px) {
+  #info .tabs { flex-wrap: wrap; row-gap: 0; overflow: visible; margin-right: 0; box-shadow: none; }
+  #info .tabs::before { content: ""; order: 1; flex: 0 0 100%; margin-bottom: 6px; border-top: 1px solid var(--line); }
+  #info .tabs [role="tab"]:nth-of-type(n+4) { order: 2; }
+  #info .tabs .edge { display: none; }
+}
+/* True size is on and this panel is about something else: said only where the true-size card (with Done) is hidden. */
+.ghostline { display: none; margin: 0 0 12px !important; padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px; }
+body.no-ghostcard .ghostline { display: block; }
+@media (max-width: 720px) { #info.tall .ghostline { display: block; } }
+/* Compare: a year that is more than two years from the other country's. */
+.cmp .yr.apart { color: var(--text); font-weight: 500; }
+/* Skip link: off-screen until it has keyboard focus, then just under the header bar, so the name stays whole. */
+.skip { position: fixed; left: 16px; top: 60px; height: 36px; min-width: 141px; z-index: 10; transform: translateY(-300%); }
+.skip:focus-visible { transform: none; }
+@media (pointer: coarse) and (min-width: 721px) { .skip { top: 76px; height: 44px; } }
+@media (max-width: 720px) { .skip { left: 12px; top: 56px; height: 44px; } }
+/* Until the data has loaded, the controls card would be an empty select and an empty Layers list. */
+/* The zoom buttons and Hot spots would do nothing yet; the status line says the map is loading. */
+body.loading #controls, body.loading .zoom, body.loading .hot-toggle { visibility: hidden; }
+/* Rank and antipode links are inline text; on touch screens their hit area is 44px tall. It reaches 8px above the
+   text and the rest below: in rows 26px apart a later link paints on top, so it never covers the text of the one above. */
+@media (pointer: coarse) {
+  button.rk { position: relative; }
+  button.rk::after { content: ""; position: absolute; inset: -8px -6px auto; height: 44px; }
+}
+/* Very narrow phones: the Compare table needs every pixel. */
+@media (max-width: 359px) {
+  table.cmp { font-size: 0.89286rem; }
+  .cmp thead .sw { display: block; margin: 0 0 3px auto; }
+}
+/* Desktop and tablets: the legend under the controls sets its swatches in two columns, so a long key (Geologic)
+   does not push the globe into a corner on a portrait tablet. */
+@media (min-width: 721px) {
+  #legendCard .swatches { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px; }
+}
+/* Touch: the search box at 16px (smaller text makes iOS zoom the page on focus), and 44px targets for the
+   controls the main rule missed. */
+@media (pointer: coarse) {
+  #q, select, #photoDay input, #spQ { font-size: max(16px, 1.14286rem); }
+  #spQ { height: 44px; }
+  #ghostDone, .sortbar button { min-width: 44px; min-height: 44px; }
+  .sub button.link { position: relative; }
+  .sub button.link::after { content: ""; position: absolute; inset: -8px -6px auto; height: 44px; }
+}
+/* A hardware keyboard on a touch screen (app.js sets .keys on the first key outside a text field): show the shortcuts. */
+body.keys #qKey { display: block; }
+body.keys #q { padding-right: 4.15em; }
+body.keys .kb { display: inline; }
+/* Windows contrast themes: keep the colour keys (the globe keeps its colours too) and show pressed states
+   by more than colour. */
+@media (forced-colors: active) {
+  .swatches i, .sw, .vb i, .bt i, .kline i { forced-color-adjust: none; }
+  .bt { outline: 1px solid CanvasText; }
+  .sortbar button, .tabs [role="tab"] span { border-bottom-color: Canvas; }
+  .tabs .edge { background: Canvas; } /* the fades are drawn in the panel colour, which the theme replaces */
+  /* The id outranks the section-tab rules further down. */
+  #controls .ctl-tabs button { border-bottom-color: Canvas; }
+  #controls .ctl-tabs button[aria-expanded="true"] { border-bottom-color: Highlight; }
+  .sortbar [aria-pressed="true"], .tabs [role="tab"][aria-selected="true"] span { border-bottom: 2px solid Highlight; }
+  [aria-pressed="true"], [role="tab"][aria-selected="true"] { font-weight: 600; }
+  #results li[aria-selected="true"] { outline: 2px solid Highlight; outline-offset: -2px; }
+}
+
+/* Map type: the status line under it (empty unless something fails), and in the bottom corner the credit a licence
+   requires on the map. */
+.map-about { margin: 0 0 12px; } /* under #mapType, which keeps its own 12px */
+.map-about:empty { display: none; }
+#attrib { position: fixed; right: 0; bottom: 0; z-index: 2; margin: 0; padding: 1px 6px; max-width: 60vw; font-size: 0.85714rem; line-height: 1.14286rem;
+  color: var(--muted); background: color-mix(in srgb, var(--panel) 82%, transparent); border-top-left-radius: 4px; }
+#attrib:empty { display: none; }
+#attrib a { color: inherit; }
+/* Phones: at the bottom left, on the 12px gutter and clear of the zoom column. */
+@media (max-width: 720px) {
+  #attrib { left: 12px; right: auto; bottom: var(--dock); max-width: calc(100vw - 84px);
+    border-radius: 4px 4px 0 0; font-size: 0.89286rem; line-height: 1.71429rem; }
+}
+.maplegend { margin-bottom: 12px; }
+#legendCard > * + .maplegend { margin-top: 12px; } /* the map's key under a colouring's */
+.maplegend p { margin: 0 0 8px; }
+.maplegend ul + p { margin-top: 10px; } /* a subheading or status line after a list, not one more row */
+.maplegend * + .lhead { margin-top: 12px; } /* a colouring's key under the map's, in the phone fold */
+.maplegend * + .hotkey { margin-top: 12px; }
+/* One column: hot spots with counts at the right edge as in Places, and a figure's classes highest first, so a
+   ramp reads straight down instead of zigzagging across two columns. */
+#legendCard .hotkey .swatches, #legendCard .swatches.ord { display: block; }
+/* A key that scrolls: a fade at its bottom edge (app.js sets more-b until the end is reached) says more lies below. */
+#legendCard.more-b::after {
+  content: ""; position: sticky; bottom: -12px; display: block; height: 32px; margin: -32px -14px -12px;
+  background: linear-gradient(to top, var(--panel), transparent); pointer-events: none;
+}
+.hotkey .swatches li { gap: 9px; }
+.tzgrid { display: grid; grid-template-columns: repeat(3, auto); justify-content: start; gap: 2px 8px; margin-top: 4px; }
+.swatches.relief { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px; }
+
+/* Country photos: a two-column grid, captions under each; the lightbox shows one large with its credit. */
+.photos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 8px; margin: 0 0 6px; }
+.photo { margin: 0; min-width: 0; }
+/* Flag and coat of arms: one height, each at its own proportions; the flag gets a hairline so white fields show. */
+.symbols { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 20px; margin: 4px 0 14px; }
+.symbols figure { margin: 0; }
+.symbols button { display: block; padding: 0; border: 0; background: none; cursor: zoom-in; }
+.symbols img { display: block; height: 64px; width: auto; }
+.symbols .flag img { outline: 1px solid var(--line); outline-offset: -1px; }
+.symbols figcaption { margin-top: 4px; font-size: 0.89286rem; color: var(--muted); }
+/* Many emblems are dark line art on a clear ground, so on the dark panel they get a sheet of paper behind them. */
+@media (prefers-color-scheme: dark) {
+  .symbols .arms img { padding: 4px; border-radius: 4px; background: #ece8de; }
+  #lightbox img.arms { background: #ece8de; }
+}
+.photo button { display: block; width: 100%; padding: 0; border: 0; border-radius: 6px; overflow: hidden; background: var(--line); cursor: zoom-in; }
+.photo img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; }
+@media (hover: hover) { .photo button:hover img { opacity: 0.92; } }
+.photo figcaption { margin-top: 4px; font-size: 0.89286rem; line-height: 1.35; color: var(--muted);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+#info h4 { margin: 12px 0 6px; font-size: 0.89286rem; font-weight: 600; color: var(--muted); }
+#lightbox { max-width: min(1100px, 94vw); max-height: 94vh; max-height: 94dvh; padding: 12px 14px 10px; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--panel); color: var(--text); }
+#lightbox::backdrop { background: rgb(0 0 0 / 0.72); }
+#lightbox form { position: absolute; top: 8px; right: 8px; margin: 0; }
+/* app.js sizes the image from the photo's record before it loads; the grey box reads as loading. */
+#lightbox img { display: block; max-width: 100%; max-height: 76vh; max-height: 76dvh; margin: 0 auto; border-radius: 4px; background: var(--line); }
+#lightbox .cap { margin: 10px 44px 2px 0; font-weight: 500; }
+#lightbox .credit { margin: 0; }
+/* A flag or emblem: the caption wraps to the image's width (app.js already keeps the image inside the screen). */
+#lightbox.sym { width: min-content; }
+#lightbox.sym img { max-width: none; }
+
+/* The eye button shows the eye while places are shown, the struck-out eye while they are hidden. */
+#placesBtn .eye-off, #placesBtn[aria-pressed="false"] .eye { display: none; }
+#placesBtn[aria-pressed="false"] .eye-off { display: block; }
+#placesBtn[aria-pressed="false"] { color: var(--muted); }
+details.maplegend > summary { padding: 2px 0; font-weight: 500; }
+/* A folded key on its own is one 44px row, so the controls above keep their room on short screens. */
+#legendCard:has(> details.maplegend:only-child) { padding-block: 0; }
+details.maplegend:only-child { margin-bottom: 0; }
+details.maplegend[open] > summary { margin-bottom: 8px; }
+/* Phones: the folded key's bar keeps the colouring's scale on a second line, so the colours read without opening it. */
+.kline { display: block; font-size: 0.89286rem; font-weight: 400; line-height: 1.28571rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+details.maplegend > summary > span { min-width: 0; }
+.kline .ramp { display: inline-flex; margin: 0 4px; vertical-align: -1px; }
+.kline i { width: 12px; height: 10px; flex: none; background: var(--c); outline: 1px solid color-mix(in srgb, var(--text) 45%, transparent); outline-offset: -1px; }
+details[open] > summary .kline { display: none; }
+
+/* People tab: blood groups table, and the folded historical note with its warning first. */
+table.blood { margin-top: 2px; }
+.history .warn { margin: 4px 0 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; }
+/* A plate's caption names its author and year, so it is never cut short. */
+.history .photo figcaption { display: block; -webkit-line-clamp: unset; }
+.history h4 { margin-top: 10px; }
+.reflegend li svg { width: 16px; height: 16px; flex: none; }
+
+/* Hot spots: one switch in the top bar for every place on the map. Wide screens use it in place of the eye
+   button; phones, short of room in the bar, keep the eye button by the zoom controls. */
+.hot-toggle { display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; background: var(--panel);
+  border: 1px solid var(--line); border-radius: 8px; font-size: 1rem; font-weight: 500; white-space: nowrap; cursor: pointer; }
+.hot-toggle input { margin: 0; accent-color: var(--member); }
+#placesBtn { display: none; }
+@media (max-width: 720px) {
+  .hot-toggle { display: none; }
+  #placesBtn { display: inline-flex; align-items: center; justify-content: center; }
+  /* With the sheet open only + and − stay, low in the corner above it, so the column does not stand over the country.
+     The eye and Reset come back when the sheet closes. */
+  body.has-info #placesBtn, body.has-info #reset { display: none; }
+}
+
+/* Controls: a row of tabs over the sections. One section is open at a time; its tab closes it again,
+   leaving only the row. The sections' own headers are not shown. */
+/* Wraps to a second row before the labels would run into each other (a large browser text size). */
+.ctl-tabs { position: sticky; top: 0; z-index: 3; display: flex; flex-wrap: wrap; flex: none; background: var(--panel); border-bottom: 1px solid var(--line); border-radius: 8px 8px 0 0; }
+#controls:not(:has(details[open])) .ctl-tabs { border-bottom: 0; border-radius: 8px; }
+.ctl-tabs button { flex: 1 1 auto; display: inline-flex; align-items: center; justify-content: center; gap: 3px; min-height: 42px;
+  padding: 0 4px; margin-bottom: -1px; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none;
+  font-weight: 600; color: var(--muted); transition: color 0.15s ease-out, border-color 0.15s ease-out; }
+@media (hover: hover) { .ctl-tabs button:hover { background: none; color: var(--text); } }
+.ctl-tabs button[aria-expanded="true"] { color: var(--text); border-bottom-color: var(--accent); }
+.ctl-tabs button:focus-visible { outline-offset: -3px; border-radius: 6px; }
+.ctl-tabs .off { font-weight: 400; color: var(--muted); white-space: pre; }
+.ctl-tabs .chev { width: 10px; height: 10px; flex: none; transition: transform 0.15s ease-out; }
+.ctl-tabs button:not([aria-expanded="true"]) .chev { display: none; }
+.ctl-tabs button[aria-expanded="true"] .chev { transform: rotate(180deg); }
+#controls details > summary { display: none; }
+#controls details:not([open]) { display: none; }
+#controls details { border-top: 0; }
+#controls details[open] { padding-top: 12px; scroll-padding-top: 8px; }
+#controls:not(:has(details[open])) { min-height: 0; }
+@media (max-width: 720px) {
+  #controls { flex-direction: column; flex-wrap: nowrap; scroll-padding-top: 52px; }
+  #controls details { flex: 1 1 auto; border-left: 0; position: static; }
+  #controls details[open] { border-top: 0; overflow: auto; }
+  .ctl-tabs button { min-height: 44px; }
+}
+/* Photos: three to a row, without captions; the photo's name shows on hover and in the lightbox. */
+.photos { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.history .photos { grid-template-columns: 1fr 1fr; gap: 10px 8px; }
+@media (max-width: 329px) { .photos { grid-template-columns: 1fr 1fr; } }
+
+@media (max-width: 720px) { #legendCard { z-index: 3; } }
+/* Narrow phones: the two-word name sets on two lines, so the search keeps its room. */
+@media (max-width: 480px) {
+  .bar h1 { width: min-content; height: 44px; font-size: 1.07143rem; line-height: 1.1; }
+}
+
+/* Desktop and tablets: the zoom row stays 8px above the credit line, however many lines it takes; the panel, the hint
+   and the true-size card stop 8px above the row. */
+@media (min-width: 721px) {
+  /* The credit line keeps the 16px page margin, clear of the legend card on the left. */
+  #attrib { right: 16px; bottom: 16px; max-width: min(60vw, calc(100vw - 338px)); border-radius: 4px; }
+  :root { --zoom-b: calc(var(--attrib-h, 0px) + 24px); --zoom-h: 36px; }
+  .zoom, body.has-info .zoom { bottom: var(--zoom-b); }
+  #hint, #ghostCard { bottom: calc(var(--zoom-b) + var(--zoom-h) + 8px); }
+}
+/* Wide screens: the side panel runs to 16px above the bottom, so the credit line moves left of it, under the zoom row. */
+@media (min-width: 1101px) and (min-height: 501px) {
+  body.has-info #attrib { right: 404px; max-width: calc(100vw - 404px - 322px); }
+}
+/* Mid widths: an open control section and the side panel cannot both fit beside the globe, so the panel folds to
+   its title bar (app.js sets ctl-fold, as phones do with ctl-open). */
+body.ctl-fold #info { max-height: 64px; overflow: hidden; }
+body.ctl-fold #info .kind { display: none; }
+
+/* Touch screens wider than a phone (tablets, phone landscape): 44px search, Hot spots and section tabs, and the
+   cards start below the taller header. */
+@media (pointer: coarse) and (min-width: 721px) {
+  :root { --zoom-h: 44px; }
+  #results li { min-height: 44px; align-items: center; }
+  #results li.more { min-height: 0; }
+  #q, .bar .hot-toggle { height: 44px; }
+  .ctl-tabs button { min-height: 44px; }
+  .bar h1 { line-height: 44px; }
+  .bar #qKey { top: 12px; }
+  .bar #status, .bar #results { top: 52px; }
+  #controls { top: 84px; max-height: calc(100vh - 100px - var(--legend-h, 0px)); max-height: calc(100dvh - 100px - var(--legend-h, 0px)); }
+}
+@media (pointer: coarse) and (min-width: 721px) and (max-width: 1100px) {
+  #info { top: 84px; max-height: calc(100vh - 136px - var(--zoom-b)); max-height: calc(100dvh - 136px - var(--zoom-b)); }
+}
+@media (pointer: coarse) and (min-width: 721px) and (max-height: 500px) {
+  #info { top: 84px; max-height: calc(100vh - 84px - var(--zoom-b)); max-height: calc(100dvh - 84px - var(--zoom-b)); }
+}
+
+/* A right-aligned share column that mixes whole and one-decimal figures: the whole ones get an invisible ".0"
+   (generated content, so it is neither copied nor read out). */
+.pad::after { content: ".0"; visibility: hidden; }
+/* Folded panel: only the title shows, so no line is cut in half and no hidden link takes focus. */
+body.ctl-fold #infoBody > :not(#infoTitle) { display: none; }

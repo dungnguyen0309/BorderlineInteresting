@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Borderline Interesting</title>
+  <meta name="description" content="Interactive globe of sea chokepoints, conflicts, territorial disputes, military bases and alliances, with World Bank data for every country.">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=EB+Garamond:ital,wght@0,500;0,600;1,500;1,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="loading">
+
+  <button type="button" class="skip" onclick="document.getElementById('globe').focus()">Skip to the globe</button>
+  <header class="bar">
+    <h1><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 16h26M16 3c-4 4-6 8.5-6 13s2 9 6 13M16 3c4 4 6 8.5 6 13s-2 9-6 13" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="21.5" cy="11" r="2.5" fill="#d9482b"/></svg>Borderline Interesting</h1>
+    <div class="search">
+      <label for="q" class="sr">Find a country or place</label>
+      <input id="q" type="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results" placeholder="Find a country or place" autocomplete="off" spellcheck="false" aria-keyshortcuts="Control+K Meta+K /" aria-describedby="status">
+      <kbd id="qKey" aria-hidden="true"></kbd>
+      <ul id="results" role="listbox" aria-label="Matches" hidden></ul>
+      <p id="status" role="status">Loading map…</p>
+    </div>
+    <label class="hot-toggle" title="Show or hide every hot spot: chokepoints, conflicts, disputes, lines, bases, ports and contested areas">
+      <input type="checkbox" id="hotAll" checked><span>Hot spots</span>
+    </label>
+  </header>
+
+  <aside id="controls" class="card" aria-label="Map controls">
+    <div class="ctl-tabs" role="group" aria-label="Map controls sections">
+      <button type="button" data-sec="mapPanel" aria-controls="mapPanel" aria-expanded="true">Map<svg class="chev" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button type="button" data-sec="placesPanel" aria-controls="placesPanel" aria-expanded="false">Places<span id="placesOff" class="off"></span><svg class="chev" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button type="button" data-sec="helpPanel" aria-controls="helpPanel" aria-expanded="false">Help<svg class="chev" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button type="button" data-sec="sourcesPanel" aria-controls="sourcesPanel" aria-expanded="false">Sources<svg class="chev" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>
+    <details id="mapPanel" open>
+      <summary>Map</summary>
+      <label for="mapType" class="field">Map type</label>
+      <select id="mapType"></select>
+      <p id="mapAbout" class="note map-about"></p>
+      <div id="mapTools"></div>
+      <label for="mode" class="field">Colour by figure</label>
+      <select id="mode"></select>
+      <label for="group" class="field">Or show a group</label>
+      <select id="group"></select>
+      <fieldset id="scopeSet" class="seg">
+        <legend>Countries</legend>
+        <label><input type="radio" name="scope" value="all" checked><span id="scopeAll">All</span></label>
+        <label><input type="radio" name="scope" value="un"><span id="scopeUn">UN members</span></label>
+      </fieldset>
+      <p class="note scope-note">Tuvalu, one of the 193 UN members, is too small to draw at this scale.</p>
+    </details>
+    <details id="placesPanel">
+      <summary>Places</summary>
+      <div id="placeList"></div>
+    </details>
+    <details id="helpPanel">
+      <summary>Help</summary>
+      <dl class="help">
+        <dt>Turn and zoom</dt><dd>Drag the globe, and scroll or pinch to zoom.<span class="kb"> With the keyboard, select the globe, then use the arrow keys and + or −.</span></dd>
+        <dt>Find</dt><dd>Search by name, former name (Burma) or ISO code (VNM).<span class="kb"> Press <kbd class="qk"></kbd> or / to jump to the search box.</span></dd>
+        <dt>Open</dt><dd>Select a country or marker on the globe.<span class="kb"> Enter opens the one in the middle; Esc closes the panel.</span></dd>
+        <dt>Rank</dt><dd>Pick a figure under Colour by figure, then Show as list. A rank in a country's panel opens the same list, on any map.</dd>
+        <dt>Compare</dt><dd>Open a country, choose Compare, then pick a second country on the globe or in search.</dd>
+        <dt>True size</dt><dd>Pins a country's outline to the middle of the view at its real size while you turn the globe under it.</dd>
+        <dt>Strategic lines</dt><dd>Lines navies plan around, such as the first island chain off China and the GIUK gap in the North Atlantic.</dd>
+        <dt>Contested areas</dt><dd>Hatched land held by one government and claimed by another.</dd>
+        <dt>Hot spots</dt><dd>The switch at the top (the eye button on phones) hides the markers, lines and hatched areas, and brings back the same ones. Places has a tick for each layer.</dd>
+      </dl>
+    </details>
+    <details id="sourcesPanel">
+      <summary>Sources</summary>
+      <h2 class="src-h">Countries and figures</h2>
+      <ul class="sources">
+        <li>Borders and coastlines: <a href="https://www.naturalearthdata.com/">Natural Earth</a> 1:50m, via <a href="https://github.com/topojson/world-atlas">world-atlas</a>. They show who controls an area on the ground and take no side on rival claims.</li>
+        <li>Country figures and income groups: <a href="https://databank.worldbank.org/source/world-development-indicators">World Bank, World Development Indicators</a> (CC BY 4.0), latest year since 2015. Trends since 1976, age pyramids, economy and electricity mixes, forest cover and CO₂ come from the same source. Data built <span id="built"></span>.</li>
+        <li>Codes, names, currencies, languages, capitals, areas and landlocked status: <a href="https://github.com/mledoze/countries">mledoze/countries</a> (ODbL) and the World Bank.</li>
+        <li>Country overviews, leaders and forms of government: <a href="https://en.wikipedia.org/">Wikipedia</a> (CC BY-SA 4.0), mostly from each country's infobox, with gaps filled from <a href="https://www.wikidata.org/">Wikidata</a> (CC0), which also gives the first-level divisions.</li>
+        <li>Religion and ethnic group shares: <a href="https://github.com/factbook/factbook.json">CIA World Factbook</a> (public domain), with each estimate's year; each country uses its own categories.</li>
+        <li>Adult height: <a href="https://doi.org/10.7554/eLife.13410">NCD-RisC, A century of trends in adult human height</a> (eLife 2016, CC BY 4.0). Modelled mean height at 18 for people born 1896 to 1996, every second year, in cm with the 95% credible interval. These are not current measurements: the latest cohort turned 18 in 2014. Only 72 of the 200 countries have measurements of people born in 1920 or earlier, and 134 of people born 1921 to 1945; elsewhere the early values come mostly from the model. NCD-RisC now lists this adult release as archived; its newer one (Lancet 2020) covers ages 5 to 19 only.</li>
+        <li>Blood groups: each country's own survey, as compiled in <a href="https://en.wikipedia.org/wiki/Blood_type_distribution_by_country">Wikipedia, Blood type distribution by country</a> (CC BY-SA 4.0). Shown only for countries whose figures were checked against the publisher's own page.</li>
+        <li>Flags and coats of arms: <a href="https://commons.wikimedia.org/">Wikimedia Commons</a> via <a href="https://www.wikidata.org/">Wikidata</a> (P41, P94); each image shows its author and licence when opened.</li>
+      </ul>
+      <h2 class="src-h">Historical classifications</h2>
+      <p class="note">The books behind the People tab's historical view.</p>
+      <ul class="sources" id="historySources"></ul>
+      <h2 class="src-h">Maps</h2>
+      <ul class="sources">
+        <li>Heights and sea depths at a clicked point: <a href="https://registry.opendata.aws/terrain-tiles/">Terrain Tiles</a> on AWS.</li>
+      </ul>
+      <div id="mapSources"></div>
+      <h2 class="src-h">Hot spots</h2>
+      <p class="note">Place notes and group memberships were written for this site and last checked in <span id="asOf"></span>.</p>
+      <ul class="sources" id="hotSources"></ul>
+      <h2 class="src-h">Photos</h2>
+      <ul class="sources">
+        <li>Country photos: <a href="https://commons.wikimedia.org/">Wikimedia Commons</a>, chosen through <a href="https://www.wikidata.org/">Wikidata</a>; each photo shows its author and licence when opened.</li>
+      </ul>
+    </details>
+  </aside>
+
+  <main>
+    <canvas id="tiles" aria-hidden="true"></canvas>
+    <canvas id="globe" tabindex="0" aria-label="Globe" aria-describedby="globeHelp"></canvas>
+    <p id="globeHelp" class="sr">Arrow keys turn the globe, plus and minus zoom, Enter opens the country in the middle. The Places list and the search box reach everything on the map.</p>
+    <p id="globeSays" class="sr" aria-live="polite"></p>
+    <p id="mapSays" class="sr" aria-live="polite"></p>
+  </main>
+
+  <section id="legendCard" class="card" hidden aria-label="Map key"></section>
+
+  <section id="info" class="card" hidden aria-labelledby="infoTitle">
+    <button id="grab" type="button" aria-label="Make the panel taller" aria-expanded="false"><span aria-hidden="true"></span></button>
+    <button id="close" type="button" class="icon" aria-label="Close">
+      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+    <div id="infoBody"></div>
+  </section>
+
+  <div class="zoom" role="group" aria-label="Map view">
+    <button id="placesBtn" type="button" class="icon" aria-pressed="true" aria-label="Hot spots" title="Hide hot spots">
+      <svg class="ic eye" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></svg><svg class="ic eye-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/><path d="M4 4l16 16"/></svg>
+    </button>
+    <button id="zin" type="button" class="icon" aria-label="Zoom in">
+      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+    <button id="zout" type="button" class="icon" aria-label="Zoom out">
+      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg>
+    </button>
+    <button id="reset" type="button" class="icon" aria-label="Reset view" title="Reset view">
+      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4.5v4h4"/></svg>
+    </button>
+  </div>
+
+  <p id="attrib"></p>
+
+  <dialog id="lightbox" aria-labelledby="lbCap">
+    <form method="dialog"><button type="submit" class="icon" aria-label="Close">
+      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></form>
+    <img alt="">
+    <p class="cap" id="lbCap"></p>
+    <p class="credit note"></p>
+  </dialog>
+
+  <div id="ghostCard" class="card" hidden>
+    <p id="ghostText"></p>
+    <button type="button" id="ghostDone">Done</button>
+  </div>
+  <p id="ghostSay" class="sr" aria-live="polite"></p>
+
+  <p id="hint" hidden></p>
+  <div id="tip" hidden></div>
+  <i id="paper" class="paper" hidden></i>
+
+  <script defer src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
