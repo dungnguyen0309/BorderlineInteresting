@@ -698,9 +698,10 @@ function render() {
   fast = lod !== 'hi' || S.moving ? fastView(c, clip) : null;
   const view = [proj.rotate(), proj.scale(), proj.translate(), S.w, S.h, lod, !!hiMap].join();
   if (S.moving || view !== projView) { projCache.clear(); projView = view; }
-  // A finger moving the globe on a touch screen: one canvas pixel per CSS pixel (a quarter of the pixels on a 2x
-  // screen) until the globe stops; the frame at rest is drawn at full resolution. Patterns keep their size either way.
-  const dpr = S.moving && coarse ? 1 : S.dpr;
+  // A finger moving the globe on a touch screen: at most two canvas pixels per CSS pixel (under half the pixels of a
+  // 3x phone) until the globe stops; the frame at rest is drawn at the screen's full resolution. Patterns keep their
+  // size either way.
+  const dpr = S.moving && coarse ? Math.min(S.dpr, 2) : S.dpr;
   if (canvas.width !== Math.floor(S.w * dpr)) { canvas.width = S.w * dpr; canvas.height = S.h * dpr; }
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, S.w, S.h);
@@ -1083,7 +1084,7 @@ function resize() {
   const wasNarrow = narrow(), wasFold = foldKey(), wasWide = S.w >= 1180, wasShort = S.h <= 500;
   S.w = innerWidth; S.h = innerHeight;
   S.tallKey = false; // measured again for the new size (renderLegend)
-  S.dpr = Math.min(devicePixelRatio || 1, 2);
+  S.dpr = Math.min(devicePixelRatio || 1, 3); // 3x phones: at 2x the globe looked soft
   if (S.dpr !== patternDpr) makePatterns();
   // Narrowing to phone width with a panel open: close the control sections, as select() does on phones,
   // so the sheet is not squeezed to its title bar.
