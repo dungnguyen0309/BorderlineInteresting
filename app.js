@@ -28,8 +28,9 @@ const INCOMES = ['Low income', 'Lower middle income', 'Upper middle income', 'Hi
 // steps, the faintest step at 2:1 or more on the land. Seven stops, so seven classes are exactly these colours.
 const RAMPS = {
   light: d3.piecewise(d3.interpolateLab, ['#ccaa6c', '#c0934f', '#b37c31', '#a76406', '#915213', '#7a4117', '#623217']),
-  // Dark land: low values dim, high values bright.
-  dark: d3.piecewise(d3.interpolateLab, ['#90502a', '#a86530', '#c17b37', '#d8923d', '#e4ae66', '#f0ca8c', '#fee5b3'])
+  // Dark land: more is more colour here too, from a dim brown-grey near the land to a saturated amber (never a pale
+  // cream, which would read as paper or no data), lightness still rising in even steps.
+  dark: d3.piecewise(d3.interpolateLab, ['#6a5a4c', '#876b4b', '#a27d4c', '#bb904e', '#d3a44f', '#eaba50', '#ffd152'])
 };
 // Names on a coloured country take dark or light ink, whichever stands out more from the fill, with a halo of the
 // other: the ramps run from pale to deep brown, so no one ink reads on every class.
@@ -43,12 +44,17 @@ const inkOn = fill => {
 // Map lettering in the printed-globe style on every map type (maps/fonts.js).
 const LABEL_FONT = MAP_FONT;
 const darkQuery = matchMedia('(prefers-color-scheme: dark)');
-const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-// A section or tab that opens settles in from 4px below: short enough not to slow a reader who switches quickly.
-const enter = els => { if (!reduceMotion) for (const el of els) el.animate([{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'none' }], { duration: 160, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' }); };
+// Read at each use, so a change of the setting applies without a reload.
+const motionQuery = matchMedia('(prefers-reduced-motion: reduce)');
+const still = () => motionQuery.matches;
+// The durations of --dur-0, --dur-1 and --dur-2 in style.css (exits, feedback, routine changes), and its --ease-out.
+const DUR_0 = 120, DUR_1 = 150, DUR_2 = 200, EASE = 'cubic-bezier(0.23, 1, 0.32, 1)';
+// A section or tab that opens settles in from 4px below (with reduced motion it only fades in): short enough not
+// to slow a reader who switches quickly.
+const enter = els => { for (const el of els) el.animate(still() ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'none' }], { duration: DUR_1, easing: EASE }); };
 const coarse = matchMedia('(pointer: coarse)').matches;
 const PICK_RADIUS = coarse ? 20 : 11;
-const MOTION = reduceMotion ? 0 : 500; // flights: quick enough not to feel like waiting
+const FLY = 500; // the shortest flight and a re-centre: quick enough not to feel like waiting
 const MAC = /Mac|iPhone|iPad/.test(navigator.userAgent);
 const STATUS = {
   un: 'UN member', observer: 'UN observer state', defacto: 'Partly recognised state',
@@ -89,9 +95,9 @@ const S = {
   scope: 'all', ghost: null, anti: null, hits: [], cur: 0, map: DEFAULT_MAP
 };
 const C = {};
-// The light theme's data colours, kept in dark mode for a globe drawn light in both themes (the Reference globe).
+// The light theme's colours, kept in dark mode for a globe drawn light in both themes (map types with paper).
 const CP = {};
-let topo, info, hot, blocs, features, borders, coast, bordersLo, coastLo, byArea, contested, hatch, dots, dotsPaper;
+let topo, info, hot, blocs, features, borders, coast, bordersLo, coastLo, byArea, contested, hatch, hatchPaper, dots, dotsPaper;
 const byIso = new Map(), byKey = new Map(), hotById = new Map(), layerById = new Map(), blocById = new Map();
 let scales = {}, ranks = {};
 
@@ -220,7 +226,9 @@ function valuesFor(m, sovOnly = false) {
   return out;
 }
 // The data colours for the globe shown: the light ones on a map that is light in both themes, else the theme's.
-const paperGlobe = () => darkQuery.matches && !!mapType(S.map).ink;
+// A colouring is drawn as in light mode too, so more is darker on every map type and in both themes.
+const lightGlobe = () => !!mapType(S.map).paper || colourMode() !== 'none';
+const paperGlobe = () => darkQuery.matches && lightGlobe();
 const pal = () => (paperGlobe() ? CP : C);
 const darkLand = () => darkQuery.matches && !paperGlobe();
 const colors = n => d3.quantize(darkLand() ? RAMPS.dark : RAMPS.light, n);
@@ -253,11 +261,11 @@ function rank(m, key) {
 
 function readTheme() {
   const cs = getComputedStyle(document.documentElement);
-  for (const k of ['ocean', 'land', 'land-hover', 'border', 'coast', 'grid', 'text', 'muted', 'halo', 'edge', 'hatch', 'sel', 'member', 'partner', 's1', 's2', 'out', 'ghost']) {
-    C[k] = cs.getPropertyValue('--' + k).trim();
-  }
   const paper = getComputedStyle($('#paper'));
-  for (const k of ['land', 'land-hover', 'member', 'partner', 'out', 'hatch']) CP[k] = paper.getPropertyValue('--' + k).trim();
+  for (const k of ['ocean', 'land', 'land-hover', 'border', 'coast', 'grid', 'text', 'muted', 'halo', 'edge', 'hatch', 'sel', 'member', 'partner', 's1', 's2', 'out', 'ghost', 'accent']) {
+    C[k] = cs.getPropertyValue('--' + k).trim();
+    CP[k] = paper.getPropertyValue('--' + k).trim();
+  }
   scales = {};
   makePatterns();
   if (features) { renderLegend(); renderLayers(); draw(); }
@@ -277,10 +285,11 @@ function makePatterns() {
     p.setTransform(new DOMMatrix().scale(1 / dpr));
     return p;
   };
-  hatch = tile(6, g => {
-    g.strokeStyle = C.hatch; g.lineWidth = 1;
+  const hatchTile = col => tile(6, g => {
+    g.strokeStyle = col; g.lineWidth = 1;
     g.beginPath(); g.moveTo(0, 6); g.lineTo(6, 0); g.moveTo(-1, 1); g.lineTo(1, -1); g.moveTo(5, 7); g.lineTo(7, 5); g.stroke();
   });
+  hatch = hatchTile(C.hatch); hatchPaper = hatchTile(CP.hatch);
   const dotTile = col => tile(5, g => { g.fillStyle = col; g.beginPath(); g.arc(2.5, 2.5, 0.85, 0, 2 * Math.PI); g.fill(); });
   dots = dotTile(C.hatch); dotsPaper = dotTile(CP.hatch);
   patternDpr = dpr;
@@ -288,7 +297,8 @@ function makePatterns() {
 
 let queued = false;
 function draw() {
-  if (!queued && features) { queued = true; requestAnimationFrame(render); }
+  // A flight paints in its own tick (frame), which clears the flag, so this frame is then skipped.
+  if (!queued && features) { queued = true; requestAnimationFrame(() => { if (queued) render(); }); }
 }
 
 const center = () => { const r = proj.rotate(); return [-r[0], -r[1]]; };
@@ -303,6 +313,8 @@ const shownItems = () => hot.items.filter(it => S.layers.has(it.layer) || S.sel?
 const isCapital = f => f.d.sov && f.d.capitalAt && byIso.get(f.d.iso3) === f;
 // The colouring shown: none on a map type that colours the countries itself. S.mode keeps the choice for the next map.
 const colourMode = () => (mapType(S.map).ownsColour ? 'none' : S.mode);
+// Hot spots step back (small, grey, major names only) under a colouring and on a map type that is itself data.
+const quietHot = () => colourMode() !== 'none' || !!mapType(S.map).dataMap;
 
 // A group: one fill for members, a second for partners and for places in it through a member, neutral land for the rest.
 function fillFor() {
@@ -484,22 +496,23 @@ function trace(g, out = ctx) {
   for (const p of rest) if (smooth(p) && (!polys || within(p))) draw(p); else path({ type: polys ? 'Polygon' : 'LineString', coordinates: p });
 }
 
-function marker(shape, x, y, r, color) {
+// P: the palette for the ground under the marker (pal()).
+function marker(shape, x, y, r, color, P) {
   ctx.beginPath();
   if (shape === 'diamond') { const d = r * 1.3; ctx.moveTo(x, y - d); ctx.lineTo(x + d, y); ctx.lineTo(x, y + d); ctx.lineTo(x - d, y); ctx.closePath(); }
   else if (shape === 'square' || shape === 'squareOpen') ctx.rect(x - r * 0.9, y - r * 0.9, r * 1.8, r * 1.8);
   else if (shape === 'triangle') { ctx.moveTo(x, y - r * 1.3); ctx.lineTo(x + r * 1.2, y + r * 0.9); ctx.lineTo(x - r * 1.2, y + r * 0.9); ctx.closePath(); }
   else ctx.arc(x, y, r, 0, 2 * Math.PI);
   ctx.lineJoin = 'round';
-  ctx.lineWidth = 4; ctx.strokeStyle = C.halo; ctx.stroke();
+  ctx.lineWidth = 4; ctx.strokeStyle = P.halo; ctx.stroke();
   if (shape === 'ring' || shape === 'squareOpen') { ctx.lineWidth = 2.2; ctx.strokeStyle = color; ctx.stroke(); }
-  else { ctx.fillStyle = color; ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = C.edge; ctx.stroke(); }
+  else { ctx.fillStyle = color; ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = P.edge; ctx.stroke(); }
 }
 
 function fillContested(a) {
   ctx.save();
   if (a.clip) paint(projected(a.clip, () => a.clip), 'clip');
-  ctx.fillStyle = hatch; paint(projected(a.geo, () => a.geo), 'fill');
+  ctx.fillStyle = paperGlobe() ? hatchPaper : hatch; paint(projected(a.geo, () => a.geo), 'fill');
   ctx.restore();
 }
 
@@ -618,14 +631,17 @@ function tileState({ loading = 0, failed = 0 } = {}) {
 
 // The sea colour under the tiles, as 0-1 RGBA for WebGL.
 function seaColour() {
-  const c = d3.rgb(C.ocean);
+  const c = d3.rgb(pal().ocean);
   return [c.r / 255, c.g / 255, c.b / 255, 1];
 }
 // What overlays (earthquakes, plate boundaries, time zones and so on) get to draw and pick with.
 function overlayApi(c) {
   return {
     ctx, proj, path, k: S.k, w: S.w, h: S.h, dpr: S.dpr, center: c, visible: p => visible(p, c),
-    dark: darkQuery.matches, C, moving: S.moving, draw, esc, fmt: { big, pct, km, FMT },
+    // dark and C follow the ground: a paper globe (and any colouring) is light in both themes.
+    dark: darkQuery.matches && !paperGlobe(), C: pal(), moving: S.moving, draw, esc, fmt: { big, pct, km, FMT },
+    // The open point's position, so a map type can mark its own marker there (Airports: the plane in the accent).
+    sel: S.sel?.kind === 'point' ? S.sel.obj.at : null,
     // A finger is moving the globe on a touch screen: slower phones get lighter frames (see render).
     lite: S.moving && coarse,
     // Shapes projected once per view (a Path2D at rest), and how to fill, stroke or clip with one;
@@ -727,7 +743,7 @@ function render() {
   const quickFill = S.moving && lod === 'mid' && proj.scale() < 3000;
   projKeep = !!mt.flags && !quickFill; // with quickFill a fill's shape is not the country's shape
   if (painted) mt.paint({ ...api, features, shape, fillShape: f => (quickFill ? f.lo : shape(f)), seen, inScope, fill: thematic ? fill : null, out: P.out, borders: projected(B, () => visibleLines(B, seen)), coast: projected(K, () => visibleLines(K, seen)) });
-  else if (!raster) { ctx.fillStyle = C.ocean; paint(projected(SPHERE, () => SPHERE), 'fill'); stroke(projected(graticule, () => graticule), C.grid, 0.5); }
+  else if (!raster) { ctx.fillStyle = P.ocean; paint(projected(SPHERE, () => SPHERE), 'fill'); stroke(projected(graticule, () => graticule), P.grid, 0.5); }
 
   // Countries are filled in one path per colour (a dozen fills, not one per country); no-data dots in one more.
   // While the globe moves at country zoom (a 1:50m frame), the fills come from the 1:110m map, which has a tenth of
@@ -765,35 +781,42 @@ function render() {
     // Over tiles the borders get a light halo, so they read on dark relief and pale streets alike.
     // Projected once for both passes over tiles (halo, then line).
     const bl = projected(B, () => visibleLines(B, seen));
-    if (raster) outline(bl, [[C.halo, 2], [C.border, 0.8]]); else stroke(bl, C.border, 0.5);
-    if (!raster) stroke(projected(K, () => visibleLines(K, seen)), C.coast, 0.6);
+    if (raster) outline(bl, [[P.halo, 2], [P.border, 0.8]]); else stroke(bl, P.border, 0.5);
+    if (!raster) stroke(projected(K, () => visibleLines(K, seen)), P.coast, 0.6);
   }
   if (mt.overlay?.ready) mt.overlay.draw(api);
 
   const sel = S.sel, hov = S.hover;
   const line = f => { const g = shape(f) || f; return projected(f, () => g); };
-  if (sel?.kind === 'hot') for (const iso of sel.obj.countries) { const f = byIso.get(iso); if (f) stroke(line(f), C.muted, 1.2); }
+  if (sel?.kind === 'hot') for (const iso of sel.obj.countries) { const f = byIso.get(iso); if (f) stroke(line(f), P.muted, 1.2); }
   // A marker that stands for a contested area (Crimea) marks that area too when it is the keyboard target.
   const area = hov?.contested || (hov?.strong && hov.kind === 'hot' && contested.find(a => a.hot === hov.obj.id));
   if (area) {
-    if (!area.clip) { if (hov.strong) outline(area.geo, [[C.halo, 4.5], [C.sel, 2]]); else stroke(area.geo, C.muted, 1.4); }
+    if (!area.clip) { if (hov.strong) outline(area.geo, [[P.halo, 4.5], [P.sel, 2]]); else stroke(area.geo, P.muted, 1.4); }
   }
   else if (hov?.kind === 'country' && hov.obj !== sel?.obj) {
-    // A ranked-list row or the keyboard target gets the selection weight; a mouse hover stays light.
-    if (hov.strong) outline(line(hov.obj), [[C.halo, 4.5], [C.sel, 2]]); else stroke(line(hov.obj), C.muted, 1.2);
+    // A ranked-list row or the keyboard target gets the selection weight. A mouse hover is lighter: the plain land's
+    // hover tint (on painted maps, colourings and tiles a veil of the ink, which shades any fill the same way) and a
+    // haloed outline.
+    const g = line(hov.obj);
+    if (hov.strong) outline(g, [[P.halo, 4.5], [P.sel, 2]]);
+    else {
+      if (painted || raster || fill(hov.obj) !== P['land-hover']) { ctx.globalAlpha = 0.07; ctx.fillStyle = P.text; paint(g, 'fill'); ctx.globalAlpha = 1; }
+      outline(g, [[P.halo, 3], [P.muted, 1.4]]);
+    }
   }
-  if (sel?.kind === 'country') outline(line(sel.obj), [[C.halo, 5], [C.sel, 2]]);
+  if (sel?.kind === 'country') outline(line(sel.obj), [[P.halo, 5], [P.sel, 2]]);
   if (sel?.kind === 'compare') {
-    for (const [f, col] of [[sel.obj.a, C.s1], [sel.obj.b, C.s2]]) if (f) outline(line(f), [[C.halo, 5], [col, 2.5]]);
+    for (const [f, col] of [[sel.obj.a, P.s1], [sel.obj.b, P.s2]]) if (f) outline(line(f), [[P.halo, 5], [col, 2.5]]);
   }
   // True-size outline: always drawn at the middle of the view, so turning the globe slides land under it.
   if (S.ghost) {
     // Projected once, then filled and stroked twice from the same path.
     ctx.beginPath(); path(moveShape(ghostShape(S.ghost.f, lo).geo, S.ghost.f.anchor, c));
-    ctx.fillStyle = C.ghost; ctx.fill();
+    ctx.fillStyle = P.ghost; ctx.fill();
     ctx.lineJoin = 'round';
-    ctx.lineWidth = 4; ctx.strokeStyle = C.halo; ctx.stroke();
-    ctx.lineWidth = 2; ctx.strokeStyle = C.s1; ctx.stroke();
+    ctx.lineWidth = 4; ctx.strokeStyle = P.halo; ctx.stroke();
+    ctx.lineWidth = 2; ctx.strokeStyle = P.s1; ctx.stroke();
     ghostReadout(c);
   }
 
@@ -809,29 +832,34 @@ function render() {
   proj.clipExtent(null); // flags fit to path.bounds(), which needs the whole shape
 
   if (S.layers.has('capitals') && !mt.drawsCapitals) {
-    ctx.fillStyle = C.text;
+    // On a data or group fill a capital takes the ink a name takes there (inkOn), so it shows on the deepest classes too.
+    const plainLand = new Set([P.land, P['land-hover'], P.out]);
     for (const f of features) {
       if (!isCapital(f) || !visible(f.d.capitalAt, c)) continue;
-      const [x, y] = proj(f.d.capitalAt);
+      const [x, y] = proj(f.d.capitalAt), col = thematic && fill(f);
+      ctx.fillStyle = col && !plainLand.has(col) ? inkOn(col).text : P.text;
       ctx.fillRect(x - 2, y - 2, 4, 4);
     }
   }
 
+  const quiet = quietHot();
   for (const it of shownItems()) {
     if (!visible(it.at, c)) continue;
     const [x, y] = proj(it.at);
     const on = sel?.obj === it || hov?.obj === it;
     const layer = layerById.get(it.layer);
-    // Under a colouring the markers step back (smaller, grey, shape only), so their hues never read as data.
-    marker(layer.shape, x, y, on ? 6.5 : thematic ? 3.5 : 4.5, thematic && !on ? C.muted : layer.color);
-    if (sel?.obj === it) { ctx.beginPath(); ctx.arc(x, y, 11, 0, 2 * Math.PI); ctx.lineWidth = 1.5; ctx.strokeStyle = C.sel; ctx.stroke(); }
+    // Under a colouring or on a data map the markers step back (smaller, grey, shape only), so their hues never read as data.
+    marker(layer.shape, x, y, on ? 6.5 : quiet ? 3.5 : 4.5, quiet && !on ? P.muted : layer.color, P);
+    if (sel?.obj === it) { ctx.beginPath(); ctx.arc(x, y, 11, 0, 2 * Math.PI); ctx.lineWidth = 1.5; ctx.strokeStyle = P.sel; ctx.stroke(); }
   }
-  if (S.anti && visible(S.anti.at, c)) { const [x, y] = proj(S.anti.at); marker('diamond', x, y, 6, C.s2); }
+  if (S.anti && visible(S.anti.at, c)) { const [x, y] = proj(S.anti.at); marker('diamond', x, y, 6, P.s2, P); }
   if (sel?.kind === 'point' && visible(sel.obj.at, c)) {
     const [x, y] = proj(sel.obj.at);
-    ctx.beginPath(); ctx.arc(x, y, 7, 0, 2 * Math.PI);
-    ctx.lineWidth = 4.5; ctx.strokeStyle = C.halo; ctx.stroke();
-    ctx.lineWidth = 2; ctx.strokeStyle = C.sel; ctx.stroke();
+    if (mt.drawSel && mt.overlay?.ready) mt.drawSel(api); // the map type's own marker for the open point, over the hot spots
+    // Round a picked marker (an airport's plane) the ring stands clear of it, as a hot spot's does.
+    ctx.beginPath(); ctx.arc(x, y, sel.obj.feature ? 12 : 7, 0, 2 * Math.PI);
+    ctx.lineWidth = 4.5; ctx.strokeStyle = P.halo; ctx.stroke();
+    ctx.lineWidth = 2; ctx.strokeStyle = P.sel; ctx.stroke();
   }
 
   drawLabels(c);
@@ -841,11 +869,11 @@ function render() {
     ctx.beginPath();
     for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) { ctx.moveTo(x + dx * 4, y + dy * 4); ctx.lineTo(x + dx * 12, y + dy * 12); }
     ctx.lineCap = 'round';
-    ctx.lineWidth = 4.5; ctx.strokeStyle = C.halo; ctx.stroke();
-    ctx.lineWidth = 2; ctx.strokeStyle = C.sel; ctx.stroke();
+    ctx.lineWidth = 4.5; ctx.strokeStyle = P.halo; ctx.stroke();
+    ctx.lineWidth = 2; ctx.strokeStyle = P.sel; ctx.stroke();
     ctx.lineCap = 'butt';
   }
-  stroke(SPHERE, C.coast, 1);
+  stroke(SPHERE, P.coast, 1);
   fast = null;
 }
 
@@ -858,14 +886,15 @@ function onFace(b) {
 const landOf = new WeakMap(); // hot spot -> the country it is in (or null at sea), for its name's ink
 function drawLabels(c) {
   const boxes = [];
-  const ink = mapType(S.map).ink || C; // a map drawn light in both themes (the Reference globe) sets its own name colours
+  // A map drawn light in both themes names in the light theme's colours, or in its own ink (the Atlas).
+  const P = pal(), ink = mapType(S.map).ink || P;
   const zb = shown($('.zoom')); if (zb) boxes.push([zb.left - 4, zb.top - 4, zb.right + 4, zb.bottom + 4]); // no lettering under the zoom buttons
   // No name over a hot-spot marker. The box stops 3px below its centre, so the marker's own name, just under it, still fits.
   for (const it of shownItems()) if (visible(it.at, c)) { const [x, y] = proj(it.at); boxes.push([x - 6, y - 6, x + 6, y + 3]); }
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
   // Under a colouring, a name on a country filled with a data or group colour takes the ink for that fill (inkOn);
   // names on plain land and the sea keep the map's own.
-  const fill = colourMode() !== 'none' && fillFor(), P = pal(), plainLand = new Set([P.land, P['land-hover'], P.out]);
+  const fill = colourMode() !== 'none' && fillFor(), plainLand = new Set([P.land, P['land-hover'], P.out]);
   const inkOf = f => { const col = fill && f && fill(f); return col && !plainLand.has(col) ? inkOn(col) : null; };
   const place = (text, x, y, font, color, force, spacing = 0, on = null) => {
     const half = textWidth(ctx, font, spacing, text) / 2 + 2;
@@ -880,14 +909,14 @@ function drawLabels(c) {
   };
   // Country names in spaced capitals and water in italic, as on printed globes.
   const caps = (name, size) => [name.toUpperCase(), size * CAPS_TRACKING];
-  // Under a colouring, hot-spot names step back with their markers: major ones only, smaller and lighter.
-  const quiet = colourMode() !== 'none';
+  // Under a colouring or on a data map, hot-spot names step back with their markers: major ones only, smaller and lighter.
+  const quiet = quietHot();
   const hotFont = (it, small) => `${it.layer === 'chokepoint' ? 'italic ' : ''}${small ? '500 11.5px' : '600 13px'} ${LABEL_FONT}`;
   const hotLabel = (it, force) => {
     if (!visible(it.at, c)) return;
     const [x, y] = proj(it.at), small = quiet && !force;
     if (!landOf.has(it)) landOf.set(it, countryAt(it.at)); // hot spots do not move: the country under one is looked up once
-    place(it.name, x, y + (small ? 12 : 15), hotFont(it, small), small && ink === C ? C.muted : ink.text, force, 0, inkOf(landOf.get(it)));
+    place(it.name, x, y + (small ? 12 : 15), hotFont(it, small), small && ink === P ? P.muted : ink.text, force, 0, inkOf(landOf.get(it)));
   };
 
   // Keyboard target: its name (or "At sea") under the crosshair, placed first so nothing hides it.
@@ -916,7 +945,9 @@ function drawLabels(c) {
   }
   const mt = mapType(S.map);
   // A map type's data labels (time zone offsets) take their places first; country names then fit round them.
-  if (mt.placeLabels && mt.overlay?.ready) mt.placeLabels({ ...overlayApi(c), boxes });
+  // Many small ones (Airports' codes) come after the names instead (namesFirst), so the countries stay named.
+  const own = mt.placeLabels && mt.overlay?.ready && (() => mt.placeLabels({ ...overlayApi(c), boxes }));
+  if (own && !mt.namesFirst) own();
   // Country names come before hot-spot names, which take the room left (the markers still show every hot spot).
   // A map type with its own lettering (the Reference globe) names countries and cities itself.
   const plain = !mt.labels && mt.countryLabels !== false;
@@ -927,9 +958,10 @@ function drawLabels(c) {
       if (!visible(f.label, c)) continue;
       const [x, y] = proj(f.label);
       const [text, sp] = caps(f.d.name, 11);
-      place(text, x, y, `600 11px ${LABEL_FONT}`, C.muted, false, sp, inkOf(f));
+      place(text, x, y, `600 11px ${LABEL_FONT}`, P.muted, false, sp, inkOf(f));
     }
   }
+  if (own && mt.namesFirst) own();
   const items = shownItems();
   for (const it of items) if (it.major) hotLabel(it);
   if (S.k >= 1.8 && !quiet) for (const it of items) if (!it.major) hotLabel(it);
@@ -944,7 +976,11 @@ function drawLabels(c) {
 
 // ---------- layout ----------
 
-const shown = el => (!el.hidden && el.getClientRects().length ? el.getBoundingClientRect() : null);
+// While a panel slides (the phone sheet, a panel's entrance) its box is read without the transform, where it is going.
+const shown = el => {
+  if (el.hidden || !el.getClientRects().length) return null;
+  return el.getAnimations().length ? new DOMRect(el.offsetLeft, el.offsetTop, el.offsetWidth, el.offsetHeight) : el.getBoundingClientRect();
+};
 const narrow = () => S.w <= 720;
 
 // The part of the screen not covered by panels; the globe is centred and fitted there.
@@ -1029,7 +1065,7 @@ function layoutChrome() {
   if (narrow()) noCard = S.h - dock - 8 - cardH - 8 < ctlBottom + 8 + 120; // the outline needs a 120px band above the card
   else { document.body.classList.add('no-ghostcard'); noCard = bottomBand().w < 300; }
   document.body.classList.toggle('no-ghostcard', noCard);
-  // Desktop: a long key (Shipping, Geologic) also takes the ground the controls card leaves free above it. Measured
+  // Desktop: a long key (Geologic) also takes the ground the controls card leaves free above it. Measured
   // from the card's content, not its box, which the key itself squeezes.
   const ctl = $('#controls'), need = ctl.getBoundingClientRect().top + [...ctl.children].reduce((s, e) => s + e.scrollHeight, 2);
   // With the Map section open its controls come first: the key, which scrolls, then gives up room down to a quarter.
@@ -1080,6 +1116,22 @@ const fitBase = () => {
   if (narrow()) { S.base = Math.min(S.base, freeRect().w / 2); proj.scale(S.base * S.k); return; } // the foldable's band left of the zoom column
   if (!$('#info').hidden) return;
   const fr = freeRect(); S.base = Math.min(S.base, fr.w / 2 - 40, fr.h / 2 - 16); proj.scale(S.base * S.k); };
+const baseSize = () => Math.min(narrow() ? S.w * 0.46 : stacked() ? S.w / 2 - 40 : S.w * 0.42, S.h * 0.42);
+// The globe's sea and rim, drawn at once so the screen is not empty while the map data loads; render() takes over.
+function drawSphere() {
+  S.w = innerWidth; S.h = innerHeight; S.dpr = Math.min(devicePixelRatio || 1, 3);
+  canvas.width = S.w * S.dpr; canvas.height = S.h * S.dpr;
+  canvas.style.width = S.w + 'px'; canvas.style.height = S.h + 'px';
+  S.base = baseSize(); fitBase();
+  const q = new URLSearchParams(location.search), fr = freeRect(), mt = mapType(q.get('map') || DEFAULT_MAP);
+  const light = !!mt.paper || (!mt.ownsColour && !!q.get('colour')), P = darkQuery.matches && light ? CP : C;
+  document.body.classList.toggle('paper-globe', light);
+  proj.translate([fr.x, fr.y]).scale(S.base);
+  ctx.setTransform(S.dpr, 0, 0, S.dpr, 0, 0);
+  ctx.beginPath(); path(SPHERE);
+  ctx.fillStyle = mt.sea || P.ocean; ctx.fill();
+  ctx.lineWidth = 1; ctx.strokeStyle = P.coast; ctx.stroke();
+}
 function resize() {
   const wasNarrow = narrow(), wasFold = foldKey(), wasWide = S.w >= 1180, wasShort = S.h <= 500;
   S.w = innerWidth; S.h = innerHeight;
@@ -1098,7 +1150,7 @@ function resize() {
   canvas.width = S.w * S.dpr; canvas.height = S.h * S.dpr;
   canvas.style.width = S.w + 'px'; canvas.style.height = S.h + 'px';
   tiles?.resize(S.w, S.h, S.dpr);
-  S.base = Math.min(narrow() ? S.w * 0.46 : stacked() ? S.w / 2 - 40 : S.w * 0.42, S.h * 0.42); // stacked: fitBase sizes it to the free area
+  S.base = baseSize(); // stacked: fitBase sizes it to the free area
   layoutChrome();
   $('#info').style.minHeight = ''; // kept from the last tab change (setTab), which may not fit the new window
   tabStrip();
@@ -1147,7 +1199,9 @@ const clampLat = v => Math.max(-89, Math.min(89, v));
 const zoom = d3.zoom()
   .scaleExtent([0.8, 30000]) // from the whole globe to a street; each map type sets its own limit (zoomLimit)
   .clickDistance(4)
-  .duration(reduceMotion ? 0 : 250)
+  .duration(still() ? 0 : DUR_2)
+  // A flight's transition brings its own scale curve (frame); every other zoom transition takes d3's.
+  .interpolate((a, b) => { const h = hop; hop = null; return h ? t => [a[0], a[1], a[2] * h.k0 / h.kAt(t)] : d3.interpolateZoom(a, b); })
   // A drag or pinch held still for a moment must not draw the detailed map mid-gesture (a long frame on slow phones).
   // The wheel has no release, so it keeps the 140 ms idle redraw.
   .on('start', e => { if (e.sourceEvent && e.sourceEvent.type !== 'wheel') S.gesture = true; })
@@ -1168,7 +1222,8 @@ const zoom = d3.zoom()
     draw();
   });
 
-const zoomBy = f => d3.select(canvas).transition().duration(reduceMotion ? 0 : 250).call(zoom.scaleBy, f);
+motionQuery.addEventListener('change', () => zoom.duration(still() ? 0 : DUR_2));
+const zoomBy = f => { hop = null; d3.select(canvas).transition().duration(still() ? 0 : DUR_2).call(zoom.scaleBy, f); };
 // Each map type zooms in only as far as its images have detail: its maxK (a number, or worked out from the globe's
 // size), else 30000, about a street. Called when the map type or the globe's size changes.
 function zoomLimit() {
@@ -1183,31 +1238,44 @@ function zoomButtons() {
   for (const [id, off] of [['#zin', S.k >= hi * 0.999], ['#zout', S.k <= lo * 1.001]]) if ($(id).getAttribute('aria-disabled') !== String(off)) $(id).setAttribute('aria-disabled', off);
 }
 
-// Turn, zoom and re-centre the globe in one move. Any drag or scroll interrupts it.
+// Turn, zoom and re-centre the globe in one move. Any drag, scroll or arrow key interrupts it.
+// A move pulls out and back in on van Wijk and Nuij's path (d3.interpolateZoom), worked in radians of arc and of view
+// radius and never further out than the whole globe (k 1), so a long flight shows both ends on the way. It takes
+// 400 ms and 3 ms a degree, from 500 to 1000 ms. With reduced motion the globe cuts to the new view.
+let hop = null; // the flight's scale curve, taken by the zoom's tween when the flight starts (zoom.interpolate)
 function frame({ at, k } = {}) {
+  hop = null;
   const fr = freeRect();
   // A re-centre with nowhere to go (the webfont arrived but nothing moved) would only redraw the whole map twice.
   const [tx, ty] = proj.translate();
   if (!at && !k && !d3.active(canvas) && Math.abs(tx - fr.x) < 0.5 && Math.abs(ty - fr.y) < 0.5) return;
-  const r0 = proj.rotate();
-  let turn = null;
+  const [lo, hi] = zoom.scaleExtent(), r0 = proj.rotate(), k0 = S.k, k1 = Math.max(lo, Math.min(hi, k || k0));
+  let turn = null, along = t => t, dur = FLY;
   if (at) {
     const r1 = [-at[0], -at[1], 0];
     r1[0] = r0[0] + ((((r1[0] - r0[0]) % 360) + 540) % 360) - 180;
     turn = d3.interpolate(r0, r1);
+    const arc = d3.geoDistance(center(), at), view = s => Math.min(fr.w, fr.h) / 2 / (S.base * s);
+    const zp = d3.interpolateZoom([0, 0, view(k0)], [arc, 0, view(k1)]), floor = Math.min(1, k0, k1);
+    if (arc > 1e-6) along = t => (t >= 1 ? 1 : zp(t)[0] / arc);
+    hop = { k0, kAt: t => (t >= 1 ? k1 : Math.max(floor, view(1) / zp(t)[2])) };
+    dur = Math.min(1000, Math.max(FLY, 400 + (3 * arc) / RAD));
   }
   const move = d3.interpolate(proj.translate(), [fr.x, fr.y]);
-  const tr = d3.select(canvas).transition().duration(MOTION).ease(d3.easeCubicInOut)
-    .tween('frame', () => t => { if (turn) proj.rotate(turn(t)); proj.translate(move(t)); moving(); draw(); });
-  if (k) tr.call(zoom.scaleTo, k);
+  const tr = d3.select(canvas).transition().duration(still() ? 0 : dur).ease(d3.easeCubicInOut)
+    .tween('frame', () => t => { if (turn) proj.rotate(turn(along(t))); proj.translate(move(t)); moving(); });
+  if (at || k) tr.call(zoom.scaleTo, k1); else hop = null;
+  // Drawn in the tick itself, after the zoom's tween has set the scale, so the globe moves in the frame the panel changes.
+  tr.tween('paint', () => () => { if (features) render(); });
   if (at || k) {
     S.flying = true;
     // If a panel or the webfont changed size mid-flight, settle into the new free area.
+    const landed = () => { S.flying = false; if (S.late) { S.late = false; if (S.sel) renderInfo(); } };
     tr.on('end.fly', () => {
-      S.flying = false;
+      landed();
       const now = freeRect();
       if (Math.abs(now.x - fr.x) > 1 || Math.abs(now.y - fr.y) > 1) frame();
-    }).on('interrupt.fly', () => { S.flying = false; });
+    }).on('interrupt.fly', landed);
   }
 }
 
@@ -1242,7 +1310,7 @@ function view(kind, obj) {
   }
   if (obj.line) { const g = { type: 'LineString', coordinates: obj.line }, at = d3.geoCentroid(g); return { at, k: fitK(g, at) }; }
   // A point on land opens close in; one at sea stays far enough out to show the coasts round it.
-  return { at: obj.at, k: Math.max(S.k, kind === 'point' && obj.country ? 8 : 3) };
+  return { at: obj.at, k: Math.max(S.k, obj.feature?.k || (kind === 'point' && obj.country ? 8 : 3)) };
 }
 
 function urlFor(hash) {
@@ -1351,6 +1419,7 @@ function setScope(v) {
 function setMode(m, { turn = false } = {}) {
   const was = S.mode, name = k => [...$('#mode').options, ...$('#group').options].find(o => o.value === k)?.text;
   S.mode = m;
+  document.body.classList.toggle('paper-globe', lightGlobe());
   // One colouring at a time: a group shows in Or show a group, anything else in Colour by figure; the other select goes
   // back to None, and the live region says so, since a screen reader on one select does not hear the other change.
   $('#mode').value = blocById.has(m) ? 'none' : m;
@@ -1434,7 +1503,17 @@ function buildIndex() {
   for (const t of MAP_TYPES) add([label(t)], 'map', t);
 }
 
-const nameOf = e => (e.kind === 'country' ? e.obj.d.name : e.kind === 'map' ? label(e.obj) : e.obj.name);
+// The shown map type's own places (mt.places: Airports' names and IATA codes), searched only while it is shown;
+// indexed once per list the type hands back.
+const placeIndex = new WeakMap();
+function mapPlaces() {
+  const list = mapType(S.map).places?.();
+  if (!list?.length) return [];
+  if (!placeIndex.has(list)) placeIndex.set(list, list.flatMap(f => f.names.filter(Boolean).map(n => ({ n: norm(n), raw: n, kind: 'feature', obj: f }))));
+  return placeIndex.get(list);
+}
+
+const nameOf = e => (e.kind === 'country' ? e.obj.d.name : e.kind === 'map' ? label(e.obj) : e.kind === 'feature' ? e.obj.title : e.obj.name);
 
 // Edit distance that counts a swapped pair as one typo ("Germnay"), giving up past `max`.
 function near(a, b, max) {
@@ -1456,12 +1535,12 @@ function near(a, b, max) {
 }
 
 // 0 exact, 1 starts with, 2 a word starts with, 3 contains, 4 one or two typos; null for no match.
-function matchScore(n, q) {
+function matchScore(n, q, typos = true) {
   if (n === q) return 0;
   if (n.startsWith(q)) return 1;
   if (n.includes(' ' + q)) return 2;
   if (q.length >= 3 && n.includes(q)) return 3;
-  if (q.length >= 4 && near(n.length > q.length + 2 ? n.slice(0, q.length) : n, q, q.length >= 8 ? 2 : 1)) return 4;
+  if (typos && q.length >= 4 && near(n.length > q.length + 2 ? n.slice(0, q.length) : n, q, q.length >= 8 ? 2 : 1)) return 4;
   return null;
 }
 
@@ -1471,8 +1550,9 @@ function search(text) {
   const q = norm(text);
   if (!q) return { hits: [], hidden: 0 };
   const best = new Map();
-  for (const e of S.index) {
-    const s = matchScore(e.n, q);
+  for (const e of S.index.concat(mapPlaces())) {
+    // A map's thousands of places take typos only after a right first letter, so typing stays quick.
+    const s = matchScore(e.n, q, e.kind !== 'feature' || e.n[0] === q[0]);
     // Very short queries match only from the start of a word, so "bur" does not dig into native-language names.
     if (s === null || (q.length < 4 && s > 2)) continue;
     const own = e.n === norm(nameOf(e));
@@ -1483,6 +1563,7 @@ function search(text) {
   // On an exact tie a place beats a country ("Falkland Islands / Malvinas" is the dispute); otherwise countries first.
   let all = [...best.values()].sort((a, b) => a.key - b.key
     || (a.key === 0 ? (b.kind === 'hot') - (a.kind === 'hot') : (a.kind === 'hot') - (b.kind === 'hot'))
+    || (a.obj.rank || 0) - (b.obj.rank || 0) // a map's places in its own order (Airports: the busiest first)
     || nameOf(a).localeCompare(nameOf(b)));
   // Loose matches (inside a word, or a typo) only when nothing matches from the start of a word:
   // "congo" should not bring up Mongolia once Congo itself is found.
@@ -1513,6 +1594,7 @@ function showResults() {
   list.innerHTML = hits.map((h, i) => {
     // UN members show their region; anything else shows its status, which is the more useful fact there.
     const kind = h.kind === 'bloc' ? 'Group' : h.kind === 'map' ? 'Map type' : h.kind === 'hot' ? layerById.get(h.obj.layer).name
+      : h.kind === 'feature' ? h.obj.kind
       : compareTarget(h.kind, h.obj) ? `Compare with ${S.sel.obj.a.d.name}`
       : h.obj.d.status === 'un' ? h.obj.d.region || 'UN member' : STATUS[h.obj.d.status] || 'Map area';
     return `<li role="option" id="opt-${i}" data-i="${i}" aria-selected="${i === 0}">
@@ -1538,6 +1620,7 @@ function openResult(i = S.cur) {
   // A group colours the map by its members; a map type switches the map.
   else if (h?.kind === 'bloc') { $('#q').value = ''; closeResults(); setMode(h.obj.id, { turn: true }); }
   else if (h?.kind === 'map') { $('#q').value = ''; closeResults(); setMapType(h.obj.id); }
+  else if (h?.kind === 'feature') choose(h, { fly: true, focus: true }); // a map's own place opens as if clicked
   else if (h) select(h.kind, h.obj, { fly: true, focus: true });
   else if ($('#q').value.trim()) showResults();
 }
@@ -1565,7 +1648,7 @@ function placeIcon(id, uid = '', color) {
 }
 // The map key's Hot spots block: the layers shown, each with its Places symbol and count; empty while none is shown.
 function hotKey() {
-  const grey = colourMode() !== 'none' ? C.muted : null; // as the globe draws them under a colouring (draw)
+  const grey = quietHot() ? C.muted : null; // as the globe draws them under a colouring or on a data map (render)
   const rows = placesShown().map(id => {
     const l = layerById.get(id), n = l ? hot.items.filter(it => it.layer === id).length : contested.length;
     return `<li>${placeIcon(id, 'Key', grey)}${esc(l ? l.name : 'Contested areas')}<span class="count">${n}</span></li>`;
@@ -1582,7 +1665,7 @@ function hotButton(it) {
 
 const TABS = [
   ['overview', 'Overview'], ['people', 'People'], ['economy', 'Economy'], ['institutions', 'Institutions'],
-  ['religion', 'Religion'], ['divisions', 'Divisions'], ['geography', 'Geography']
+  ['security', 'Security'], ['religion', 'Religion'], ['divisions', 'Divisions'], ['geography', 'Geography']
 ];
 
 // Names, codes, trends, age pyramid and economy mix: data/atlas.json, fetched the first time it is needed.
@@ -1591,7 +1674,7 @@ function loadAtlas() {
   atlasLoad ||= fetch('data/atlas.json')
     .then(r => (r.ok ? r.json() : Promise.reject(new Error(r.status))))
     .catch(() => ({ countries: {}, years: [0, 0], failed: true }))
-    .then(a => { atlas = a; if (S.sel?.kind === 'country' || S.sel?.kind === 'compare') renderInfo(); });
+    .then(a => { atlas = a; if (S.sel?.kind === 'country' || S.sel?.kind === 'compare') lateRender(); });
   return atlasLoad;
 }
 
@@ -1613,7 +1696,8 @@ function figuresTable(head, rows) {
 // One or two yearly series on a shared axis. series: [{ name, cls, values }] aligned to atlas.years.
 // Pointer, touch (tap or drag) and the arrow keys all move the year shown under the chart.
 // opts.start: the year of values[0] (default: the atlas's first year); opts.zero: false fits the axis to the data;
-// opts.tickFmt: a coarser format for the axis ticks only (the readout and the table keep fmt).
+// opts.tickFmt: a coarser format for the axis ticks only (the readout and the table keep fmt); opts.gaps: the line
+// breaks at a year with no value instead of joining across it, and a year with no neighbour is a dot (arms transfers).
 function trendChart(series, fmt, label, measure, opts = {}) {
   const y0 = opts.start ?? atlas.years[0];
   const lines = series.map(s => ({ ...s, pts: (s.values || []).map((v, i) => [y0 + i, v]).filter(p => p[1] != null) }))
@@ -1624,7 +1708,7 @@ function trendChart(series, fmt, label, measure, opts = {}) {
   const x = d3.scaleLinear(d3.extent(pts, p => p[0]), [m.l, CW - m.r]);
   const [vlo, vhi] = d3.extent(pts, p => p[1]);
   const y = d3.scaleLinear(opts.zero === false ? [vlo - (vhi - vlo) * 0.1, vhi + (vhi - vlo) * 0.1] : [0, vhi], [H - m.b, m.t]).nice(4);
-  const line = d3.line(p => x(p[0]), p => y(p[1]));
+  const line = d3.line(p => x(p[0]), p => y(p[1])).defined(p => p[1] != null);
   const id = 'c' + chartN++;
   const years = [...new Set(pts.map(p => p[0]))].sort((a, b) => b - a);
   CHARTS.set(id, { lines, x, y, fmt, year: null, years });
@@ -1637,7 +1721,8 @@ function trendChart(series, fmt, label, measure, opts = {}) {
     <svg viewBox="0 0 ${CW} ${H}" data-chart="${id}" tabindex="0" role="slider" aria-label="${esc(label)}, year"
       aria-valuemin="${lo}" aria-valuemax="${hi}" aria-valuenow="${hi}" aria-valuetext="${esc(readoutText(id))}">
       ${yt}${xt}<line class="axis" x1="${m.l}" x2="${CW - m.r}" y1="${y(y.domain()[0])}" y2="${y(y.domain()[0])}"/>
-      ${lines.map(s => `<path class="ln ${s.cls}" d="${line(s.pts)}"/>`).join('')}
+      ${lines.map(s => `<path class="ln ${s.cls}" d="${line(opts.gaps ? s.values.map((v, i) => [y0 + i, v]) : s.pts)}"/>`).join('')}
+      ${opts.gaps ? lines.flatMap(s => s.values.flatMap((v, i) => (v != null && s.values[i - 1] == null && s.values[i + 1] == null ? [`<circle class="pt ${s.cls}" r="2.5" cx="${x(y0 + i)}" cy="${y(v)}"/>`] : []))).join('') : ''}
       <line class="cur" y1="${m.t}" y2="${H - m.b}" hidden/>
       ${lines.map((s, i) => `<circle class="dot ${s.cls}" r="3.5" data-s="${i}" hidden/>`).join('')}
     </svg>
@@ -1742,7 +1827,7 @@ function loadPhotos() {
     .then(t => t ?? fetch('data/photos.json').then(r => (r.ok ? r.text() : Promise.reject(new Error(r.status)))))
     .then(t => JSON.parse(t))
     .catch(() => { photosLoad = photoText = null; return { countries: {}, failed: true }; }) // the next country opened asks again
-    .then(p => { photos = p; if (S.sel?.kind === 'country') renderInfo(); });
+    .then(p => { photos = p; if (S.sel?.kind === 'country') lateRender(); });
   return photosLoad;
 }
 const PHOTO_GROUPS = [['nature', 'Nature'], ['culture', 'Culture'], ['cities', 'Cities'], ['transport', 'Getting around']];
@@ -1775,7 +1860,7 @@ let symbols = null, symbolsLoad = null;
 function symbolsHTML(d) {
   symbolsLoad ||= fetch('data/symbols.json').then(r => (r.ok ? r.json() : Promise.reject(new Error(r.status))))
     .catch(() => ({ countries: {} }))
-    .then(s => { symbols = s; if (S.sel?.kind === 'country') renderInfo(); });
+    .then(s => { symbols = s; if (S.sel?.kind === 'country') lateRender(); });
   const set = symbols?.countries[d.iso3];
   if (!set?.length) return '';
   return `<div class="symbols">${set.map((p, i) => `<figure class="${p.kind === 'Flag' ? 'flag' : 'arms'}">
@@ -1785,7 +1870,8 @@ function symbolsHTML(d) {
 }
 function openPhoto(key) {
   const [iso, g, i] = key.split('|');
-  const p = g === 'people' ? peopleData?.photos?.countries?.[iso]?.[+i]
+  const p = iso === 'map' ? mapType(S.map).photo?.(+i) // a map type's own photos (Airports)
+    : g === 'people' ? peopleData?.photos?.countries?.[iso]?.[+i]
     : g === 'history' ? peopleData?.history?.regions?.[iso]?.images?.[+i]
     : g === 'symbols' ? symbols?.countries[iso]?.[+i]
     : photos?.countries[iso]?.[g]?.[+i];
@@ -1801,6 +1887,9 @@ function openPhoto(key) {
   img.alt = '';
   if (g === 'symbols' && p.kind !== 'Flag') img.className = 'arms'; // a paper ground in dark mode (style.css)
   img.src = p.img.replace(/\/\d+px-/, '/1280px-');
+  // The panel's 330px thumbnail (already loaded) stands in under the photo, which fades in over it once it arrives.
+  box.querySelector('.pic').style.backgroundImage = `url("${p.img.replace(/\/\d+px-/, '/330px-')}")`;
+  if (!img.complete) { img.classList.add('wait'); img.addEventListener('load', () => img.classList.remove('wait'), { once: true }); }
   old.replaceWith(img);
   box.querySelector('.cap').textContent = p.caption || p.title;
   box.querySelector('.credit').innerHTML = `${p.author ? esc(p.author) + ', ' : ''}${esc(p.licence)}, via <a href="${esc(p.page)}" target="_blank" rel="noopener">Wikimedia Commons</a>`;
@@ -1820,7 +1909,7 @@ function loadPeople() {
       const [height, ethnic, blood, photos, history] = got.map(x => (x === FAILED ? null : x));
       peopleData = { height, ethnic, blood, photos, history, failed: got.includes(FAILED) };
       if (peopleData.failed) peopleLoad = null;
-      if (S.sel?.kind === 'country') renderInfo();
+      if (S.sel?.kind === 'country') lateRender();
     });
   return peopleLoad;
 }
@@ -1931,7 +2020,7 @@ function loadProfiles() {
   profilesLoad ||= fetch('data/profiles.json')
     .then(r => (r.ok ? r.json() : Promise.reject(new Error(r.status))))
     .catch(() => ({ countries: {}, failed: true }))
-    .then(p => { profiles = p; if (S.sel?.kind === 'country') renderInfo(); });
+    .then(p => { profiles = p; if (S.sel?.kind === 'country') lateRender(); });
   return profilesLoad;
 }
 
@@ -2019,10 +2108,117 @@ const neighbours = f => f.nb.map(i => features[i]).filter(g => g.d.iso3 || !cont
   .sort((a, b) => a.d.name.localeCompare(b.d.name));
 const NOT_LOADED = '<p class="empty">This section did not load. Reload the page to try again.</p>';
 // " since 1990": the first year any of the series has a value (many start after the data's first year).
-const sinceYear = (...series) => {
+const sinceFrom = (y0, ...series) => {
   const i = d3.min(series.filter(Boolean), v => { const k = v.findIndex(x => x != null); return k < 0 ? undefined : k; });
-  return i == null ? '' : ` since ${atlas.years[0] + i}`;
+  return i == null ? '' : ` since ${y0 + i}`;
 };
+const sinceYear = (...series) => sinceFrom(atlas.years[0], ...series);
+
+// A group chip: it colours the map by that group's membership (Overview's Groups, Security's alliances).
+function groupChip(b, iso) {
+  const role = b.role.get(iso) === 'partner' ? ` · ${b.partnerRole}` : '';
+  const on = S.mode === b.id;
+  return `<button type="button" class="group" data-mode="${b.id}" aria-pressed="${on}" title="${on ? 'Stop colouring the map' : `Colour the map by ${esc(b.name)} membership`}"><span class="sw" aria-hidden="true"></span>${esc(b.name)}${esc(role)}</button>`;
+}
+
+// The Security tab's Factbook text, nuclear status and their sources: data/security.json from
+// scripts/build_security.py, fetched with the first country opened. The figures come from atlas.json (mil).
+let security = null, securityLoad = null;
+function loadSecurity() {
+  securityLoad ||= fetch('data/security.json')
+    .then(r => (r.ok ? r.json() : Promise.reject(new Error(r.status))))
+    .catch(() => ({ countries: {}, nuclear: null, sources: [], failed: true }))
+    .then(s => { security = s; if (S.sel?.kind === 'country') lateRender(); });
+  return securityLoad;
+}
+const OWNER = { USA: 'US', RUS: 'Russian' };
+const longDate = s => new Date(s + 'T00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+// Nuclear weapons held or hosted, and the NPT and TPNW. Treaty rows only for UN members and observers, the
+// states build_security.py gives an NPT status.
+function nuclearRows(iso) {
+  const N = security?.nuclear;
+  if (!N || !iso) return [];
+  const armed = N.armed.find(x => x.iso === iso), host = N.hosts.find(x => x.iso === iso);
+  const adj = host && (OWNER[host.owner] || host.owner);
+  const weapons = [
+    armed && `An estimated ${d3.format(',')(armed.warheads)} warheads <span class="yr">${esc(N.warheadsAsOf)}${armed.firstTest ? ` · first test ${armed.firstTest}` : ''}</span>`,
+    host?.status === 'hosts' && `Hosts ${adj} weapons`,
+    host?.status === 'possibly' && `Possibly hosts ${adj} weapons`,
+    host?.status === 'claimed' && `${adj} weapons said to be deployed here, not confirmed <span class="yr">${esc(N.warheadsAsOf)}</span>`,
+    N.sharing.includes(iso) && 'Takes part in NATO nuclear sharing',
+    N.sharingContingency.includes(iso) && 'Takes part in NATO nuclear sharing on a contingency basis'
+  ].filter(Boolean);
+  const npt = N.npt.parties.includes(iso) ? 'Party' : N.npt.nonParties.includes(iso) ? 'Not a party'
+    : N.npt.withdrew[iso] ? `Announced its withdrawal on ${longDate(N.npt.withdrew[iso])}` : null;
+  const tpnw = npt && `${N.tpnw.parties.includes(iso) ? 'Party' : N.tpnw.signatories.includes(iso) ? 'Signed, not ratified' : 'Not a party'} <span class="yr">as of ${longDate(N.tpnw.asOf)}</span>`;
+  return [['Weapons', weapons.join('<br>')], ['Non-Proliferation Treaty', npt], ['Ban treaty (TPNW)', tpnw]];
+}
+const FACTBOOK = [['forces', 'Forces'], ['personnel', 'Personnel'], ['equipment', 'Equipment'], ['service', 'Service'], ['deploy', 'Deployments']];
+const sentence = s => cap(s).replace(/[^.!?)]$|[^.!?]\)$/, '$&.'); // "(VV)" gets its full stop, "(see above.)" does not
+// The Security tab: spending, armed forces and arms trade (World Bank, from SIPRI and IISS), nuclear status,
+// alliances, bases and hot spots, then the Factbook's own text, folded.
+function securityHTML(d, a, ind) {
+  if (!security) loadSecurity();
+  if (!atlas || !security) return '<p class="empty">Loading…</p>';
+  const iso = d.iso3, y0 = atlas.milYears?.[0] ?? 1990, m = a.mil || {};
+  const last = s => { for (let i = (s?.length || 0) - 1; i >= 0; i--) if (s[i] != null) return [s[i], y0 + i]; return null; };
+  const yv = (p, fmt) => p && `${fmt(p[0])} <span class="yr">${p[1]}</span>`;
+  const xv = (k, fmt) => yv(a.x?.[k], fmt);
+  const num = d3.format(',');
+  const tiv = v => (v === 0 ? 'under 0.5' : num(v)) + ' million TIV'; // SIPRI's 0 stands for under half a million
+  const out = [];
+
+  const spend = [
+    d.v?.mil && ind('mil'),
+    ['In current US$', yv(last(m.usd), v => '$' + big(v * 1e6))],
+    ['Share of government spending', xv('milGov', pct)]
+  ].filter(r => r?.[1]);
+  if (spend.length) out.push(dl(spend));
+  // An all-zero series (Costa Rica, Iceland) has no line worth drawing; the rows above already say 0%.
+  if (d3.max(m.gdp || []) > 0) {
+    const since = sinceFrom(y0, m.gdp);
+    out.push(`<h3>Military spending${since}, % of GDP</h3>${trendChart([{ name: d.name, cls: 's1', values: m.gdp }], pct, `Military spending of ${d.name}${since}, % of GDP`, 'Share of GDP', { start: y0, gaps: true })}`);
+  }
+  // A latest personnel figure of 0 follows years of real counts (Libya, Palestine): a gap in the estimates, not zero forces.
+  const pers = last(m.pers);
+  const forces = [['Personnel', pers?.[0] ? yv(pers, num) : null], ['Share of labour force', a.x?.milLab?.[0] ? xv('milLab', pct) : null]];
+  if (forces.some(r => r[1])) out.push(`<h3>Armed forces</h3>${dl(forces)}`);
+  const trade = [['Imports', yv(last(m.imp), tiv)], ['Exports', yv(last(m.exp), tiv)]];
+  if (trade.some(r => r[1])) {
+    const lines = [{ name: 'Imports', cls: 's1', values: m.imp }, { name: 'Exports', cls: 's2', values: m.exp }];
+    const since = sinceFrom(y0, m.imp, m.exp);
+    // A trend needs ten years of transfers in one direction; a few scattered years read better as the rows alone.
+    const chart = d3.max([...(m.imp || []), ...(m.exp || [])]) > 0 && d3.max([m.imp, m.exp], v => (v || []).filter(x => x != null).length) >= 10
+      ? trendChart(lines, v => (v === 0 ? 'under 0.5' : num(v)) + 'M', `Arms imports and exports of ${d.name}${since}, million TIV`, 'Million TIV', { start: y0, tickFmt: num, gaps: true }) : '';
+    out.push(`<h3>Arms trade${chart ? since : ''}</h3>${dl(trade)}${chart}<p class="note">TIV is SIPRI's trend-indicator value: it measures the volume of arms transferred, not what was paid.</p>`);
+  }
+  const nuclear = nuclearRows(iso).filter(r => r[1]);
+  if (nuclear.length) out.push(`<h3>Nuclear status</h3>${dl(nuclear)}`);
+
+  const allied = kind => blocs.blocs.filter(b => b.security === kind && b.role.has(iso)).map(b => groupChip(b, iso));
+  const alliances = [['Mutual defence', allied('defence')], ['Security cooperation', allied('partnership')]].filter(r => r[1].length);
+  // Chip groups under small headings, not in a fact list: the value column is too narrow for a row of chips.
+  if (alliances.length) out.push(`<h3>Alliances</h3>${alliances.map(([k, c]) => `<h4>${k}</h4><div class="chips">${c.join('')}</div>`).join('')}`);
+
+  const bases = hot.items.filter(it => it.layer === 'base');
+  const spots = [
+    ['Bases it hosts', bases.filter(it => it.host === iso), 'secHosts'],
+    ['Bases it operates', bases.filter(it => it.host !== iso && it.operator?.includes(iso)), 'secOps'],
+    ['Conflicts and disputes', hot.items.filter(it => (it.layer === 'conflict' || it.layer === 'dispute') && it.countries.includes(iso)), 'secHot']
+  ].filter(r => iso && r[1].length);
+  if (spots.length) out.push(`<h3>Bases and hot spots</h3>${spots.map(([k, items, key]) => `<h4>${k}</h4>${capped(items.map(hotButton), 6, 'div', 'chips', key)}`).join('')}`);
+
+  const fb = security.countries[iso] || {};
+  const text = FACTBOOK.filter(([k]) => fb[k]).map(([k, label]) => {
+    const e = fb[k], notes = [...(e.notes || []).map(sentence), e.year && `As of ${e.year}.`].filter(Boolean);
+    return `<h4>${label}</h4><p>${esc(sentence(e.text)).replace(/\n/g, '<br>')}</p>${notes.length ? `<p class="note">${esc(notes.join(' '))}</p>` : ''}`;
+  });
+  // Folded like Height in People; opened when it is all there is (Greenland: "no regular military forces").
+  if (text.length) out.push(`<details class="sect"${out.length ? '' : ' open'}><summary>Forces and service</summary>${text.join('')}</details>`);
+
+  const failed = atlas.failed || security.failed ? NOT_LOADED : '';
+  return out.length ? out.join('') + failed : failed || `<p class="empty">No security figures for ${esc(d.name)} in the sources used here.</p>`;
+}
 function countryHTML(f) {
   // "Region, income" with each part kept whole, so a narrow panel breaks at the comma, never inside
   // "upper middle income". Status gets its own line, only when it is not plain UN membership.
@@ -2142,11 +2338,7 @@ function countryHTML(f) {
   const lengthsNote = contested.find(a => a.lengthsNote && (a.feature === f.key || (d.iso3 && a.holder === d.iso3)))?.lengthsNote;
   const nbs = neighbours(f);
 
-  const groups = blocs.blocs.filter(b => b.role.has(d.iso3)).map(b => {
-    const role = b.role.get(d.iso3) === 'partner' ? ` · ${b.partnerRole}` : '';
-    const on = S.mode === b.id;
-    return `<button type="button" class="group" data-mode="${b.id}" aria-pressed="${on}" title="${on ? 'Stop colouring the map' : `Colour the map by ${esc(b.name)} membership`}"><span class="sw" aria-hidden="true"></span>${esc(b.name)}${esc(role)}</button>`;
-  });
+  const groups = blocs.blocs.filter(b => b.role.has(d.iso3)).map(b => groupChip(b, d.iso3));
   const places = hot.items.filter(it => it.countries.includes(d.iso3));
 
   // Disputes this country is party to that no visible place chip already covers (Serbia's claim on Kosovo,
@@ -2179,6 +2371,7 @@ function countryHTML(f) {
     people: peoplePanel,
     economy: economyPanel,
     institutions: prof.institutions,
+    security: securityHTML(d, a, ind),
     religion: prof.religion,
     divisions: prof.divisions,
     geography: `${dl(geo)}${atlas?.failed ? NOT_LOADED : ''}<p class="note">Lengths are measured on a 1:50m map and usually come out shorter than official figures.${lengthsNote ? ' ' + esc(lengthsNote) : ''}</p>
@@ -2218,13 +2411,33 @@ function pointAt(at, country, feature = null) {
 function readPoint(o) {
   const mt = mapType(S.map);
   if (o.map === mt.id) return;
-  o.map = mt.id; o.rows = null;
-  const height = elevationAt(o.at[0], o.at[1])
-    // Under a clicked aircraft or quake the row names the ground, so it is not read as the feature's own height or depth.
+  o.map = mt.id; o.rows = null; o.more = '';
+  // A map type may name what stands at the point (Airports: the airport), so a click beside its marker or a link
+  // opens it as a picked feature: its title, and its own position in the address. The reads below wait for it.
+  const named = !mt.featureAt ? Promise.resolve() : Promise.resolve().then(() => mt.featureAt(o.at)).catch(() => null).then(f => {
+    if (o.map !== mt.id || !f) return;
+    const p = pointAt(f.at, o.country);
+    Object.assign(o, { at: p.at, id: p.id, feature: { ...o.feature, ...f, rows: o.feature?.rows || [] } });
+    if (S.sel?.obj !== o) return;
+    history.replaceState(history.state, '', urlFor(hashFor('point', o)));
+    renderInfo(); draw();
+  });
+  const height = named.then(() => elevationAt(o.at[0], o.at[1]))
+    // Under a clicked quake, volcano or airport the row names the ground, so it is not read as the feature's own height or depth.
     .then(m => [[o.feature ? (m < 0 ? 'Sea floor below' : 'Ground below') : m < 0 ? 'Depth' : 'Height', m < 0 ? `${(-m).toLocaleString('en')} m below sea level` : `${m.toLocaleString('en')} m above sea level`]])
     .catch(() => []);
-  const here = Promise.resolve().then(() => (mt.query ? mt.query(o.at, overlayApi(center())) : []))
+  const here = named.then(() => (mt.query ? mt.query(o.at, overlayApi(center())) : []))
     .catch(e => { console.warn(e); return [['Map data', 'Did not load. Try again in a moment.']]; });
+  // A map type may add slower parts under the facts (Airports: the view from above, photos, a summary).
+  if (mt.more) named.then(() => mt.more(o.at, overlayApi(center()))).catch(e => { console.warn(e); return ''; })
+    .then(m => { if (o.map !== mt.id || !m) return; o.more = m; if (S.sel?.obj === o && o.rows) renderInfo(); });
+  // The map's facts show as soon as they are read; the height row keeps its line until the terrain tile comes, so
+  // nothing under it moves then.
+  here.then(a => {
+    if (o.map !== mt.id || o.rows) return;
+    o.rows = [...(a || []), [o.feature ? 'Ground below' : 'Height', 'Reading…']];
+    if (S.sel?.obj === o) renderInfo();
+  });
   Promise.all([here, height]).then(([a, b]) => {
     if (o.map !== mt.id) return;
     o.rows = [...(a || []), ...b];
@@ -2239,7 +2452,7 @@ function pointHTML(o) {
     <h2 id="infoTitle" tabindex="-1">${f ? esc(f.title) : latLonText(o.at)}</h2>
     <p class="sub">${f ? `${f.sub ? esc(f.sub) + '<br>' : ''}${latLonText(o.at)}` : o.country ? `In ${esc(o.country.d.name)}` : 'At sea'}</p>
     ${ghostLine(null)}
-    ${rows.length ? dl(rows) : ''}${o.rows ? '' : '<p class="empty">Reading the map here…</p>'}
+    ${rows.length ? dl(rows) : ''}${o.rows ? o.more || '' : '<p class="empty">Reading the map here…</p>'}
     ${o.country && o.country.d.iso3 ? `<div class="chips"><button type="button" data-f="${o.country.i}">Open ${esc(o.country.d.name)}</button></div>` : ''}`;
 }
 
@@ -2393,12 +2606,23 @@ function setPlaceholder() {
     : S.w < 330 ? 'Search' : narrow() ? 'Country or place' : 'Find a country or place';
 }
 
+// Data that arrives during a flight fills the panel when the globe lands: re-rendering it mid-flight drops frames on phones.
+const lateRender = () => { if (S.flying) S.late = true; else renderInfo(); };
 let lastShown = null;
 function renderInfo() {
   const box = $('#info');
   box.classList.toggle('country', S.sel?.kind === 'country' || S.sel?.kind === 'compare');
   setPlaceholder();
   if (!S.sel) {
+    // The phone sheet slides away: a copy of it does, as the panel itself goes at once and the globe takes the room.
+    if (!box.hidden && narrow() && !still()) {
+      const copy = box.cloneNode(true);
+      copy.inert = true; copy.setAttribute('aria-hidden', 'true');
+      // shortcut: the copy keeps the ids so the panel's id-based styles still apply; it comes after the panel, so
+      // getElementById and label references find the real one, and it is gone in 120 ms. A class-based panel style would end that.
+      box.after(copy); copy.scrollTop = box.scrollTop;
+      copy.animate([{ transform: 'none' }, { transform: 'translateY(100%)' }], { duration: DUR_0, easing: 'ease-in' }).onfinish = () => copy.remove();
+    }
     box.hidden = true;
     box.classList.remove('tall');
     $('#grab').setAttribute('aria-expanded', 'false');
@@ -2424,7 +2648,12 @@ function renderInfo() {
   $('#infoBody').innerHTML = k === 'country' ? countryHTML(S.sel.obj) : k === 'list' ? listHTML(S.sel.obj)
     : k === 'compare' ? compareHTML(S.sel.obj) : k === 'point' ? pointHTML(S.sel.obj) : hotHTML(S.sel.obj);
   document.title = `${$('#infoTitle').textContent} - Borderline Interesting`; // history, bookmarks and open tabs can be told apart
-  box.hidden = false;
+  if (box.hidden) {
+    box.hidden = false;
+    // Opening: the phone sheet rises from the bottom edge, the side panel settles in as a tab does.
+    if (narrow() && !still()) box.animate([{ transform: 'translateY(100%)' }, { transform: 'none' }], { duration: DUR_2, easing: EASE });
+    else enter([box]);
+  }
   tabStrip();
   if (keep) {
     for (const key of keep.more) {
@@ -2440,6 +2669,7 @@ function renderInfo() {
   }
   lastShown = S.sel.obj;
   if (was) ($('#infoBody ' + was) || $('#infoTitle'))?.focus({ preventScroll: true });
+  writeCredit(); // a type's onMap can follow the panel (Airports: EOX's credit while a view from above is in it)
 }
 
 function setTab(id, focus) {
@@ -2468,12 +2698,12 @@ function setTab(id, focus) {
   if (changed && panel) enter([panel]);
   tabStrip(true);
 }
-// The tab row is one strip that scrolls sideways when the seven tabs do not fit: the chosen tab goes to the middle,
+// The tab row is one strip that scrolls sideways when the eight tabs do not fit: the chosen tab goes to the middle,
 // so its neighbours show on both sides, and a fade marks each edge with more tabs beyond it.
 function tabStrip(smooth) {
   const t = $('#info .tabs'), tab = t?.querySelector('[aria-selected="true"]');
   if (!t) return;
-  if (tab) t.scrollTo({ left: tab.offsetLeft - (t.clientWidth - tab.offsetWidth) / 2, behavior: smooth && !reduceMotion ? 'smooth' : 'instant' });
+  if (tab) t.scrollTo({ left: tab.offsetLeft - (t.clientWidth - tab.offsetWidth) / 2, behavior: smooth && !still() ? 'smooth' : 'instant' });
   tabEdges(t);
 }
 // The ends of the strip: a fade with a chevron, shown while more tabs lie that way; a click scrolls the strip.
@@ -2607,7 +2837,7 @@ function renderLegend() {
   const a = document.activeElement;
   const back = !el.contains(a) ? null : a.id ? '#' + a.id : a.matches('summary') ? `details.${a.parentElement.classList[0]} > summary` : null;
   if (m === 'none' || both) { el.hidden = !mapPart; el.innerHTML = mapPart; }
-  else { el.innerHTML = `${modeLegend(m)}${mapPart}`; el.hidden = false; } // the colouring first: a long map key (Flights) scrolls below it
+  else { el.innerHTML = `${modeLegend(m)}${mapPart}`; el.hidden = false; } // the colouring first: a long map key scrolls below it
   if (back) el.querySelector(back)?.focus({ preventScroll: true });
   if (!foldKey() && (key || hk) && stacked() && el.offsetHeight > 0.4 * S.h) { S.tallKey = true; renderLegend(); }
 }
@@ -2694,6 +2924,14 @@ function renderSources() {
     $('#hotSources').innerHTML = byName.filter(it => it.sources?.length).map(it => `<li><span class="src-name">${esc(it.name)}</span><ul class="plain">${
       it.sources.map(s => `<li>${srcLink(s.title, s.url)}, ${esc(s.publisher)}</li>`).join('')}</ul></li>`).join('');
   }
+  if (!$('#securitySources').childElementCount) {
+    loadSecurity().then(() => {
+      $('#secAsOf').textContent = security.asOf || '';
+      $('#securitySources').innerHTML = security.sources.length
+        ? security.sources.map(s => `<li>${srcLink(s.title, s.url)}, ${esc(s.publisher)}${s.date ? `, ${esc(s.date)}` : ''}</li>`).join('')
+        : '<li>This list did not load. Reload the page to try again.</li>';
+    });
+  }
   if (!peopleData?.history) { // asked again on the next opening after a failed load
     loadPeople().then(() => {
       const list = peopleData?.history?.sources || [];
@@ -2705,7 +2943,7 @@ function renderSources() {
   $('#mapSources').innerHTML = '<p class="note">Loading map sources…</p>';
   sourcesLoad = Promise.all(MAP_TYPES.map(t => loadType(t.id))).then(() => {
     // A credit that names what is on screen (a getter) may need its map shown first; it is then left out.
-    // Some credits open with the map's own name ("Flights: ..."), which the line above already gives.
+    // Some credits open with the map's own name, which the line above already gives.
     const credit = t => { try { return (t.credit || '').replace(`${t.name}: `, ''); } catch { return ''; } };
     $('#mapSources').innerHTML = GROUP_ORDER.map(g => `<h3 class="src-g">${esc(g)}</h3><ul class="sources">${MAP_TYPES.filter(t => t.group === g)
       .map(t => `<li><span class="src-name">${esc(label(t))}</span><br>${blank(credit(t)) || 'No outside sources'}</li>`).join('')}</ul>`).join('');
@@ -2723,7 +2961,7 @@ function syncTypeControls() {
   for (const id of ['mode', 'group']) $('#' + id).hidden = $(`label[for="${id}"]`).hidden = !!mt.ownsColour;
   const cap = $('#placeList input[value="capitals"]')?.closest('.lyr');
   if (cap) cap.hidden = !!mt.drawsCapitals;
-  document.body.classList.toggle('paper-globe', !!mt.ink); // toned down in dark mode (style.css)
+  document.body.classList.toggle('paper-globe', lightGlobe()); // toned down in dark mode (style.css)
   document.body.classList.toggle('dark-tiles', !!mt.darkTiles); // inverted in dark mode (style.css)
   syncPlaces();
 }
@@ -2742,7 +2980,7 @@ function setMapType(id, { url = true } = {}) {
     });
     return;
   }
-  // An earthquake, aircraft or vessel panel belongs to the map that drew it; a clicked point re-reads the new map.
+  // An earthquake, volcano or airport panel belongs to the map that drew it; a clicked point re-reads the new map.
   if (S.sel?.kind === 'point' && S.sel.obj.feature) select(null, null, { push: false });
   const mt = mapType(id);
   S.map = mt.id;
@@ -2831,7 +3069,7 @@ function buildControls() {
 
   const hint = $('#hint');
   // The search box's own chip shows the shortcut, and Help keeps the touch gestures.
-  // On point maps (Flights, Shipping and others) a click reads the map there; the address names the map at start.
+  // On point maps (Earthquakes and others) a click reads the map there; the address names the map at start.
   const what = mapType(new URLSearchParams(location.search).get('map') || S.map).click === 'point' ? 'the map or a marker' : 'a country or marker';
   hint.textContent = coarse ? `Tap ${what}.` : `Drag to turn, scroll to zoom, click ${what}.`;
   hint.hidden = false;
@@ -2971,6 +3209,7 @@ function bind() {
     const d = { ArrowLeft: [step, 0], ArrowRight: [-step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[e.key];
     if (d) {
       e.preventDefault();
+      if (S.flying) d3.select(canvas).interrupt();
       proj.rotate([r[0] + d[0], clampLat(r[1] + d[1]), r[2]]);
       target();
       moving();
@@ -2994,7 +3233,22 @@ function bind() {
   // The handle: a tap toggles half and tall; a drag up makes it tall, a drag down makes it half height
   // (or closes the panel when it already is).
   let grabFrom = null, grabDragged = false;
-  const setTall = on => { $('#info').classList.toggle('tall', on); $('#grab').setAttribute('aria-expanded', on); layoutChrome(); };
+  // Half and tall: the sheet slides to its new top edge (a transform, so its contents are laid out once). Taller, it
+  // grows at once and slides up from where it was; shorter, it slides down first and then shrinks.
+  let sheetAnim = null;
+  const setTall = on => {
+    const box = $('#info'), apply = () => { box.classList.toggle('tall', on); $('#grab').setAttribute('aria-expanded', on); layoutChrome(); };
+    sheetAnim?.cancel(); sheetAnim = null;
+    if (on === box.classList.contains('tall')) return;
+    if (still()) return apply();
+    const top = box.getBoundingClientRect().top;
+    box.classList.toggle('tall', on);
+    const dy = box.getBoundingClientRect().top - top;
+    if (on) { apply(); sheetAnim = box.animate([{ transform: `translateY(${-dy}px)` }, { transform: 'none' }], { duration: DUR_2, easing: EASE }); return; }
+    box.classList.add('tall');
+    const a = sheetAnim = box.animate([{ transform: 'none' }, { transform: `translateY(${dy}px)` }], { duration: DUR_2, easing: EASE, fill: 'forwards' });
+    a.onfinish = () => { sheetAnim = null; apply(); a.cancel(); };
+  };
   $('#grab').addEventListener('pointerdown', e => { grabFrom = e.clientY; grabDragged = false; $('#grab').setPointerCapture(e.pointerId); });
   $('#grab').addEventListener('pointermove', e => {
     if (grabFrom == null || grabDragged) return;
@@ -3017,8 +3271,7 @@ function bind() {
   $('#grab').addEventListener('pointercancel', () => { grabFrom = null; });
   $('#grab').onclick = () => {
     if (grabDragged) { grabDragged = false; return; } // the drag already acted
-    $('#grab').setAttribute('aria-expanded', $('#info').classList.toggle('tall'));
-    layoutChrome();
+    setTall(!$('#info').classList.contains('tall'));
   };
 
   // The photo viewer closes on a tap on the dimmed backdrop too (the click lands on the dialog itself, outside its box).
@@ -3098,7 +3351,7 @@ function bind() {
   $('#infoBody').addEventListener('scroll', e => { if (e.target.classList?.contains('tabs')) tabEdges(e.target); }, { capture: true, passive: true });
   $('#infoBody').addEventListener('click', e => {
     const g = e.target.closest?.('.tabs .edge');
-    if (g) g.parentNode.scrollBy({ left: g.dataset.edge * g.parentNode.clientWidth * 0.6, behavior: reduceMotion ? 'instant' : 'smooth' });
+    if (g) g.parentNode.scrollBy({ left: g.dataset.edge * g.parentNode.clientWidth * 0.6, behavior: still() ? 'instant' : 'smooth' });
   });
   $('#infoBody').addEventListener('wheel', e => {
     const t = e.target.closest?.('.tabs'), dy = e.deltaY;
@@ -3241,6 +3494,8 @@ function failLoad(message) {
 
 async function start() {
   $('#status').textContent = 'Loading map…';
+  readTheme();
+  drawSphere();
   // A link to a map type other than the entry one: its module comes with the map data, so the first frame is that map.
   const linked = loadType(new URLSearchParams(location.search).get('map')).catch(() => {});
   try {
@@ -3257,8 +3512,12 @@ async function start() {
   document.body.classList.remove('loading'); // the controls card stays hidden until it has its contents
   buildIndex();
   bind();
+  // The empty globe was placed before the cards had their contents: it glides from there to its place (frame).
+  const early = proj.translate();
   resize();
+  proj.translate(early);
   fromUrl();
+  if (!S.flying) frame(); // a deep link's flight is scheduled, not yet active, so d3.active() would miss it
   fitBase(); // again: the legend is only rendered by now
   zoomLimit();
   if ($('#q').value && document.activeElement === $('#q')) showResults(); // text typed while the map was loading

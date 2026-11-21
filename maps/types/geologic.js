@@ -133,7 +133,7 @@ function legend() {
 }
 
 export default {
-  id: 'geologic', name: 'Geologic', group: 'Earth science',
+  id: 'geologic', name: 'Geologic', group: 'Earth science', dataMap: true,
   ownsColour: true,
   credit: '<a href="https://macrostrat.org">Macrostrat</a> and the <a href="https://macrostrat.org/maps">original source maps</a> it compiles (<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>)',
   // The tiles are the whole map, CC BY 4.0 (tiles.macrostrat.org: "required to cite Macrostrat"), so credited on it.

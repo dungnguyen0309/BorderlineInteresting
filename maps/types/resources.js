@@ -376,7 +376,7 @@ function swatches(rows, cls = '') {
 }
 
 export default {
-  id: 'resources', name: 'Resources', group: 'Economy',
+  id: 'resources', name: 'Resources', group: 'Economy', dataMap: true,
   // The rents view colours the countries itself; power plants and deposits are drawn over plain land.
   get ownsColour() { return view === 'rents'; },
   credit: '<a href="https://datacatalog.worldbank.org/search/dataset/0037712">World Bank WDI</a> (<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>) · ' +

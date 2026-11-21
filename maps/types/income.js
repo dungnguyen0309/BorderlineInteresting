@@ -10,8 +10,10 @@ const LAND_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-110m.
 // International dollars (PPP). The source says 2021 dollars, but its US figure for 1990 ($23,889) is the
 // World Bank's current-price value, so the series is read as current prices.
 const BREAKS = [5000, 10000, 20000, 35000, 50000, 65000, 80000];
-// The app's own sequential ramp (ColorBrewer YlGnBu, colour-blind safe); in dark mode high values are bright.
-const RAMPS = { light: t => d3.interpolateYlGnBu(0.12 + 0.78 * t), dark: t => d3.interpolateYlGnBu(0.88 - 0.7 * t) };
+// Light: pale to deep blue-green (ColorBrewer YlGnBu). Dark: dim to bright and saturated (viridis from 0.2, so the
+// lowest class still clears the dark sea at 2:1),
+// so on both grounds more is more colour and the top class never reads as pale paper. Both colour-blind safe.
+const RAMPS = { light: t => d3.interpolateYlGnBu(0.12 + 0.78 * t), dark: t => d3.interpolateViridis(0.2 + 0.8 * t) };
 const NODATA = { light: '#c9c9c4', dark: '#4a4a48' };
 const LINE = { light: 'rgba(255,255,255,0.6)', dark: 'rgba(0,0,0,0.45)' };
 const darkNow = () => matchMedia('(prefers-color-scheme: dark)').matches;
@@ -147,7 +149,7 @@ function rows(f) {
 }
 
 export default {
-  id: 'income', name: 'GDP per person by region', group: 'Economy',
+  id: 'income', name: 'GDP per person by region', group: 'Economy', dataMap: true,
   ownsColour: true,
   credit: 'GDP per person: <a href="https://doi.org/10.5281/zenodo.18429133">Kummu, Kosonen and Masoumzadeh Sayyar</a>, ' +
     '<a href="https://doi.org/10.1038/s41597-025-04487-x">Scientific Data 12: 178 (2025)</a>, ' +

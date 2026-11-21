@@ -16,7 +16,7 @@
 
   <button type="button" class="skip" onclick="document.getElementById('globe').focus()">Skip to the globe</button>
   <header class="bar">
-    <h1><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 16h26M16 3c-4 4-6 8.5-6 13s2 9 6 13M16 3c4 4 6 8.5 6 13s-2 9-6 13" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="21.5" cy="11" r="2.5" fill="#d9482b"/></svg>Borderline Interesting</h1>
+    <h1><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 16h26M16 3c-4 4-6 8.5-6 13s2 9 6 13M16 3c4 4 6 8.5 6 13s-2 9-6 13" fill="none" stroke="currentColor" stroke-width="1.5"/><circle class="sun" cx="21.5" cy="11" r="2.5"/></svg>Borderline Interesting</h1>
     <div class="search">
       <label for="q" class="sr">Find a country or place</label>
       <input id="q" type="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results" placeholder="Find a country or place" autocomplete="off" spellcheck="false" aria-keyshortcuts="Control+K Meta+K /" aria-describedby="status">
@@ -61,7 +61,7 @@
       <summary>Help</summary>
       <dl class="help">
         <dt>Turn and zoom</dt><dd>Drag the globe, and scroll or pinch to zoom.<span class="kb"> With the keyboard, select the globe, then use the arrow keys and + or −.</span></dd>
-        <dt>Find</dt><dd>Search by name, former name (Burma) or ISO code (VNM).<span class="kb"> Press <kbd class="qk"></kbd> or / to jump to the search box.</span></dd>
+        <dt>Find</dt><dd>Search by name, former name (Burma) or ISO code (VNM). On the Airports map, search also finds airports by name or IATA code (LHR).<span class="kb"> Press <kbd class="qk"></kbd> or / to jump to the search box.</span></dd>
         <dt>Open</dt><dd>Select a country or marker on the globe.<span class="kb"> Enter opens the one in the middle; Esc closes the panel.</span></dd>
         <dt>Rank</dt><dd>Pick a figure under Colour by figure, then Show as list. A rank in a country's panel opens the same list, on any map.</dd>
         <dt>Compare</dt><dd>Open a country, choose Compare, then pick a second country on the globe or in search.</dd>
@@ -84,6 +84,9 @@
         <li>Blood groups: each country's own survey, as compiled in <a href="https://en.wikipedia.org/wiki/Blood_type_distribution_by_country">Wikipedia, Blood type distribution by country</a> (CC BY-SA 4.0). Shown only for countries whose figures were checked against the publisher's own page.</li>
         <li>Flags and coats of arms: <a href="https://commons.wikimedia.org/">Wikimedia Commons</a> via <a href="https://www.wikidata.org/">Wikidata</a> (P41, P94); each image shows its author and licence when opened.</li>
       </ul>
+      <h2 class="src-h">Security</h2>
+      <p class="note">Nuclear status and alliance terms were last checked in <span id="secAsOf"></span>.</p>
+      <ul class="sources" id="securitySources"></ul>
       <h2 class="src-h">Historical classifications</h2>
       <p class="note">The books behind the People tab's historical view.</p>
       <ul class="sources" id="historySources"></ul>
@@ -140,7 +143,7 @@
   <dialog id="lightbox" aria-labelledby="lbCap">
     <form method="dialog"><button type="submit" class="icon" aria-label="Close">
       <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></form>
-    <img alt="">
+    <div class="pic"><img alt=""></div>
     <p class="cap" id="lbCap"></p>
     <p class="credit note"></p>
   </dialog>

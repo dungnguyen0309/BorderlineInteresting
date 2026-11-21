@@ -193,7 +193,7 @@ function legendSizes() {
 }
 
 export default {
-  id: 'earthquakes', name: 'Earthquakes', group: 'Earth science', live: true,
+  id: 'earthquakes', name: 'Earthquakes', group: 'Earth science', live: true, dataMap: true,
   credit: 'Earthquakes: <a href="https://earthquake.usgs.gov/earthquakes/feed/">U.S. Geological Survey</a>, ANSS ComCat (public domain); events before 1976 mostly <a href="https://www.isc.ac.uk/iscgem/">ISC-GEM catalogue</a> (International Seismological Centre and GEM Foundation, <a href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a>). Borders: <a href="https://www.naturalearthdata.com/">Natural Earth</a>',
   layers: () => [], vector: 'full', click: 'point',
 
@@ -236,8 +236,9 @@ export default {
     }, 30e3);
   },
 
-  legend() {
-    const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+  legend({ mode } = {}) {
+    // Under a colouring the globe is light in both themes (app.js), so the key shows the light ground's deep class.
+    const dark = matchMedia('(prefers-color-scheme: dark)').matches && (!mode || mode === 'none');
     return `<p class="note keep" id="eqStatus">${statusText()}</p>
       <ul class="swatches ord">${DEPTHS.map((d, i) => `<li><i style="--c:${colour(i, dark)}"></i>${d.label}</li>`).join('')}</ul>
       <p>Magnitude</p>${legendSizes()}`;

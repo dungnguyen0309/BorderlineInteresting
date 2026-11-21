@@ -128,7 +128,7 @@ function ramp() {
 }
 
 export default {
-  id: 'hardiness', name: 'Plant hardiness zones', group: 'Weather and life',
+  id: 'hardiness', name: 'Plant hardiness zones', group: 'Weather and life', dataMap: true,
   credit: 'Zones computed from ERA5 TNn 1991–2020 via the <a href="https://climateknowledgeportal.worldbank.org/">World Bank Climate Change Knowledge Portal</a> (<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>); contains modified Copernicus Climate Change Service information 2026. Coast: <a href="https://www.naturalearthdata.com/">Natural Earth</a>',
   layers: () => [{ src: source }],
   vector: 'lines', click: 'point', overlay, ownsColour: true,

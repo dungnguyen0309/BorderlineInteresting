@@ -198,7 +198,7 @@ async function query([lon, lat]) {
 }
 
 export default {
-  id: 'weather', name: 'Weather', group: 'Weather and life', live: true,
+  id: 'weather', name: 'Weather', group: 'Weather and life', live: true, dataMap: true,
   credit: 'Precipitation: <a href="https://gpm.nasa.gov/data/imerg">NASA GPM IMERG</a> (early run) and Blue Marble via <a href="https://earthdata.nasa.gov/gibs">NASA GIBS</a>; ' +
     `clouds: © <a href="https://view.eumetsat.int/">EUMETSAT</a> ${new Date().getUTCFullYear()} (<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>); ` +
     'forecast: <a href="https://open-meteo.com/">Weather data by Open-Meteo.com</a> (<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>)',

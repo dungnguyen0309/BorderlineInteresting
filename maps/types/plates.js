@@ -284,7 +284,7 @@ const line = (kind, extra = '') => `<svg width="22" height="12" viewBox="0 0 22 
 const arrowSvg = mm => { const l = arrowLen(mm); return `<svg width="${l + 4}" height="10" viewBox="0 0 ${l + 4} 10" aria-hidden="true" style="flex:none;vertical-align:middle"><path d="M2 5H${l + 2}M${l - 2} 2L${l + 2} 5L${l - 2} 8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>`; };
 
 const plateType = {
-  id: 'plates', name: 'Plate tectonics', group: 'Earth science',
+  id: 'plates', name: 'Plate tectonics', group: 'Earth science', dataMap: true,
   credit: 'Plates and boundaries: <a href="https://doi.org/10.1029/2001GC000252">Bird (2003), PB2002</a>, GeoJSON by Hugo Ahlenius, Nordpil and Peter Bird (<a href="https://github.com/fraxen/tectonicplates">fraxen/tectonicplates</a>, <a href="https://opendatacommons.org/licenses/by/1-0/">ODC-BY 1.0</a>). Relief: <a href="https://registry.opendata.aws/terrain-tiles/">Terrain Tiles</a> (Mapzen on AWS: SRTM, GMTED2010, ETOPO1, GEBCO and <a href="https://github.com/tilezen/joerd/blob/master/docs/attribution.md">others</a>). Borders: <a href="https://www.naturalearthdata.com/">Natural Earth</a>',
   countryLabels: false, // plate names instead of country names (takes effect with the app.js change in the report)
   // A quiet relief base: sea-floor depth at half strength, so ridges and trenches show under the lines.

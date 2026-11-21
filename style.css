@@ -25,10 +25,21 @@
      a tint's green) so the panels match the map. Validated for colour-blind separation on the panel, every pair. */
   --s1: #276ea4;
   --s2: #b0513a;
-  --s3: #77994e;
+  --s3: #7d9f54;
   --so: #c3c2b7;
   --out: #c9c4b6;
   --ghost: rgba(39, 110, 164, 0.24);
+  /* The dim behind the photo viewer; the paper behind emblems in dark mode; the red sun in the logo. */
+  --scrim: rgb(0 0 0 / 0.55);
+  --sheet: #ece8de;
+  --mark: #d9482b;
+  /* A pressed button: the text mixed into the hover tint (a mouse always hovers first), a step past it in both themes. */
+  --press: color-mix(in srgb, var(--text) 12%, var(--land-hover));
+  /* Exits, feedback, routine changes (app.js has the same as DUR_0, DUR_1 and DUR_2), and the arrival curve. */
+  --dur-0: 120ms;
+  --dur-1: 150ms;
+  --dur-2: 200ms;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --dock: 0px;
   color-scheme: light;
   /* 14px at the browser's default text size, and scaled with it; every other rem in this file is a step of this size. */
@@ -47,9 +58,9 @@
     --coast: #6d7782;
     --grid: rgba(200, 215, 230, 0.07);
     --text: #e7eaee;
-    --muted: #9a9ca3;
+    --muted: #a9abb2;
     --panel: #131217;
-    --line: #2a292f;
+    --line: #36353c;
     --halo: rgba(18, 26, 33, 0.8);
     --edge: rgba(0, 0, 0, 0.7);
     --hatch: rgba(231, 234, 238, 0.4);
@@ -60,11 +71,12 @@
     --accent: #4a8ad6;
     --field: #6d7782;
     --s1: #4a88c2;
-    --s2: #ba5a40;
+    --s2: #b3543a;
     --s3: #81a256;
     --so: #4b4b47;
     --out: #1e2226;
     --ghost: rgba(74, 136, 194, 0.3);
+    --scrim: rgb(0 0 0 / 0.72);
     color-scheme: dark;
   }
 }
@@ -84,9 +96,13 @@ h1, h2, h3 { text-wrap: balance; }
 #globe:active { cursor: grabbing; }
 #globe.pointer { cursor: pointer; }
 #globe:focus-visible { outline-offset: -4px; }
-/* The paper globe stays light in dark mode (app.js sets paper-globe): toned down a little so it does not glare on the
+/* The paper globe (and any colouring) stays light in dark mode (app.js sets paper-globe): toned down a little so it does not glare on the
    dark page. The lettering keeps its contrast (water names on their halo 5.6:1, country names 8.7:1). */
-@media (prefers-color-scheme: dark) { body.paper-globe #globe { filter: brightness(0.92); } }
+@media (prefers-color-scheme: dark) { body.paper-globe :is(#globe, #tiles) { filter: brightness(0.92); } }
+/* In dark mode the light focus ring gets a dark ring inside it, so it shows on light globes and pale tiles too. */
+@media (prefers-color-scheme: dark) {
+  body:has(#globe:focus-visible)::after { content: ''; position: fixed; inset: 4px; z-index: 1; border: 2px solid var(--panel); pointer-events: none; }
+}
 /* Street-map tiles (Political zoomed in, Roads, Postal codes) have no dark style: inverted with their hues turned back,
    so land is dark and water stays blue, and the selected outline and the names keep their contrast. */
 @media (prefers-color-scheme: dark) { body.dark-tiles #tiles { filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.85); } }
@@ -148,7 +164,7 @@ summary {
 summary::-webkit-details-marker { display: none; }
 summary::after {
   content: ""; flex: none; width: 7px; height: 7px; border: solid var(--muted); border-width: 0 1.5px 1.5px 0;
-  transform: rotate(45deg) translate(-2px, -2px); transition: transform 0.15s ease-out;
+  transform: rotate(45deg) translate(-2px, -2px); transition: transform var(--dur-1) ease-out;
 }
 details[open] > summary::after { transform: rotate(-135deg) translate(-1px, -1px); }
 summary:focus-visible { outline-offset: -2px; border-radius: 6px; }
@@ -162,7 +178,7 @@ legend, .field { display: block; font-weight: 500; color: var(--muted); margin-b
 #placeList label { flex: 1; display: flex; align-items: center; gap: 9px; min-height: 30px; cursor: pointer; }
 #placeList input { margin: 0; accent-color: var(--member); }
 .fold { width: 30px; height: 30px; padding: 0; display: inline-grid; place-items: center; border: 0; background: none; color: var(--muted); }
-.fold .chev { width: 10px; height: 10px; transition: transform 0.15s ease-out; }
+.fold .chev { width: 10px; height: 10px; transition: transform var(--dur-1) ease-out; }
 .fold[aria-expanded="true"] .chev { transform: rotate(180deg); }
 .count { margin-left: auto; color: var(--muted); }
 .mk { width: 14px; height: 14px; flex: none; overflow: visible; }
@@ -231,7 +247,7 @@ summary + .src-h { margin-top: 4px; }
 /* The key figures as one line under the subtitle. */
 .keyline { margin: -6px 0 12px !important; }
 
-/* Seven sections in one row over a single rule; the panel wraps them to two rows below (#info .tabs) except on the
+/* Eight sections in one row over a single rule; the panel wraps them to two rows below (#info .tabs) except on the
    narrowest phones and short landscape screens. The row scrolls sideways when they do not fit (a swipe, the wheel or
    the arrow keys); a fade at an edge says more tabs lie that way (.more-l and .more-r, set by app.js). The strip clips,
    so the focus ring sits inside the tab, which has side padding to keep it off the letters. */
@@ -245,7 +261,7 @@ summary + .src-h { margin-top: 4px; }
 /* The solid part (30px) is wider than any glyph, so the letter the strip cuts at its edge is always hidden whole. */
 .tabs .edge {
   position: sticky; z-index: 1; flex: none; display: flex; align-items: flex-end; width: 40px; padding-bottom: 9px; color: var(--muted);
-  opacity: 0; pointer-events: none; transition: opacity 0.15s ease-out;
+  opacity: 0; pointer-events: none; transition: opacity var(--dur-1) ease-out;
 }
 .tabs .edge svg { width: 12px; height: 12px; }
 .tabs .edge:first-child { left: 0; margin-right: -50px; background: linear-gradient(to right, var(--panel) 75%, transparent); }
@@ -253,7 +269,7 @@ summary + .src-h { margin-top: 4px; }
 .tabs .edge:last-child { right: 0; margin-left: -50px; justify-content: flex-end; background: linear-gradient(to left, var(--panel) 75%, transparent); }
 .tabs .edge:last-child svg { transform: rotate(-90deg); }
 .tabs.more-l .edge:first-child, .tabs.more-r .edge:last-child { opacity: 1; pointer-events: auto; cursor: pointer; }
-.tabs [role="tab"] span { display: inline-block; padding-bottom: 6px; border-bottom: 2px solid transparent; transition: border-color 0.15s ease-out; }
+.tabs [role="tab"] span { display: inline-block; padding-bottom: 6px; border-bottom: 2px solid transparent; transition: border-color var(--dur-1) ease-out; }
 .tabs [role="tab"][aria-selected="true"] span { border-bottom-color: var(--accent); }
 [role="tabpanel"] > h3:first-child { margin-top: 4px; }
 @media (hover: hover) { .tabs [role="tab"]:hover { background: none; color: var(--text); } }
@@ -294,10 +310,14 @@ button.link { border: 0; background: none; padding: 0; text-align: left; color: 
 button {
   font: inherit; color: inherit; background: var(--panel); border: 1px solid var(--line);
   border-radius: 6px; padding: 4px 10px; cursor: pointer;
-  touch-action: manipulation; transition: background-color 0.15s ease-out, border-color 0.15s ease-out;
+  touch-action: manipulation; transition: background-color var(--dur-1) ease-out, border-color var(--dur-1) ease-out;
 }
 @media (hover: hover) { button:hover { background: var(--land-hover); } } /* touch: no tint left behind after a tap */
-button:active { filter: brightness(0.94); }
+/* Pressed: an instant tint (no transition in); tabs and other buttons without a ground preview their underline instead. */
+button:active { background: var(--press); transition: none; }
+:is(.tabs [role="tab"], .ctl-tabs button, .sortbar button, button.link, button.rk, .symbols button, .photo button):active { background: none; color: var(--text); }
+.tabs [role="tab"]:not([aria-selected="true"]):active span, .ctl-tabs button:not([aria-expanded="true"]):active,
+.sortbar button:not([aria-pressed="true"]):active { border-bottom-color: var(--line); transition: none; }
 .chips button { display: inline-flex; align-items: center; gap: 7px; min-height: 30px; }
 .chips button.group .sw { width: 12px; height: 10px; border-radius: 2px; background: var(--member); }
 .chips button.group[aria-pressed="true"] { border-bottom-color: var(--accent); }
@@ -306,7 +326,7 @@ button.icon { width: 32px; height: 32px; padding: 0; display: inline-grid; place
 .empty { color: var(--muted); }
 
 /* Zoom, hint, tooltip */
-.zoom { position: fixed; right: 16px; bottom: 16px; display: flex; gap: 8px; transition: right 0.2s ease-out; }
+.zoom { position: fixed; right: 16px; bottom: 16px; display: flex; gap: 8px; }
 .zoom button { height: 36px; }
 .zoom button.icon { width: 36px; }
 body.has-info .zoom { right: 404px; }
@@ -316,7 +336,7 @@ body.has-info .zoom { right: 404px; }
   position: fixed; left: var(--free-x, 50%); bottom: 64px; transform: translateX(-50%); margin: 0; pointer-events: none;
   width: max-content; max-width: min(calc(100% - 24px), calc(var(--free-w, 100vw) - 24px)); padding: 5px 10px; text-align: center;
   color: var(--muted); font-size: 0.89286rem; background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
-  transition: opacity 0.3s ease-out;
+  transition: opacity var(--dur-2) ease-out;
 }
 #hint.gone { opacity: 0; }
 body.has-info #hint { display: none; }
@@ -390,10 +410,14 @@ body.hint-col #hint { left: 16px; top: var(--hint-top); bottom: auto; transform:
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; }
+  /* Fades stay: the photo viewer comes and goes without growing, and a photo still fades in over its thumbnail. */
+  #lightbox, #lightbox::backdrop { transform: none !important; transition-property: opacity, overlay, display !important; transition-duration: var(--dur-0) !important; transition-behavior: allow-discrete !important; }
+  #lightbox .pic img { transition: opacity var(--dur-1) ease-out !important; }
 }
 
 /* Product mark beside the name. */
 .mark { width: 18px; height: 18px; flex: none; }
+.mark .sun { fill: var(--mark); }
 
 /* Search results under the box; Ctrl K / ⌘K hint inside it until focused. */
 #q { padding-right: 4.15em; } /* room for the hint at any text size */
@@ -407,7 +431,8 @@ body.hint-col #hint { left: 16px; top: var(--hint-top); bottom: auto; transform:
   margin: 0; padding: 4px; list-style: none; background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
 }
 #results li { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 6px 8px; border-radius: 6px; cursor: pointer; }
-#results li[aria-selected="true"] { background: var(--land-hover); }
+/* The keyboard's row: the tint and a ring in the focus colour, as a focused control has. */
+#results li[aria-selected="true"] { background: var(--land-hover); box-shadow: inset 0 0 0 2px var(--focus); }
 #results small, #results .ok { color: var(--muted); font-size: 0.89286rem; }
 #results .ok { white-space: nowrap; }
 #results li.more { cursor: default; color: var(--muted); font-size: 0.89286rem; }
@@ -435,22 +460,27 @@ button.link { text-decoration-color: color-mix(in srgb, currentColor 45%, transp
 .chart svg { display: block; width: 100%; height: auto; overflow: visible; font-size: 0.78571rem; }
 .chart text { fill: var(--muted); font-variant-numeric: tabular-nums; }
 .chart .gl { stroke: var(--line); }
-.chart .axis { stroke: var(--border); }
+.chart .axis { stroke: var(--field); }
 .chart .ln { fill: none; stroke-width: 2; stroke-linejoin: round; }
 .chart .cur { stroke: var(--muted); stroke-dasharray: 2 2; }
 .chart .dot { stroke: var(--panel); stroke-width: 2; }
 .ln.s1 { stroke: var(--s1); }
 .ln.s2 { stroke: var(--s2); }
+.pt.s1 { fill: var(--s1); }
+.pt.s2 { fill: var(--s2); }
 rect.s1, .dot.s1, .sw.s1 { fill: var(--s1); background: var(--s1); }
 rect.s2, .dot.s2, .sw.s2 { fill: var(--s2); background: var(--s2); }
 rect.s3, .sw.s3 { fill: var(--s3); background: var(--s3); }
 rect.so, .sw.so { fill: var(--so); background: var(--so); }
+/* "The rest" is pale on purpose, so a 1px outline (3:1 on the panel) shows where its segment ends. */
+rect.so { stroke: var(--field); stroke-width: 1px; vector-effect: non-scaling-stroke; }
+.sw.so { box-shadow: inset 0 0 0 1px var(--field); }
 .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; flex: none; }
 figcaption { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; margin-top: 4px; font-size: 0.89286rem; font-variant-numeric: tabular-nums; }
 /* A one-line chart's caption is empty until a year is chosen; the line is kept so the panel does not jump. */
 .chart figcaption { min-height: 1.45em; }
 figcaption span { display: inline-flex; align-items: center; gap: 6px; }
-svg.mix { display: block; width: 100%; height: auto; }
+svg.mix { display: block; width: 100%; height: auto; overflow: visible; }
 .mixkey { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 3px; }
 .mixkey li { display: flex; align-items: center; gap: 8px; }
 .mixkey .bv { margin-left: auto; }
@@ -614,13 +644,16 @@ body.no-ghostcard #ghostCard { display: none; }
 #info .tabs { position: sticky; top: -16px; z-index: 1; background: var(--panel); padding-top: 6px; margin-right: 48px; box-shadow: 48px -1px var(--panel), 48px 0 var(--line); }
 /* Phones: once pinned under the handle, the tab row and the way back sit above its 44px hit area (Close stays on top). */
 @media (max-width: 720px) { #info .tabs { top: 6px; z-index: 2; } #info .backrow { z-index: 2; } }
-/* The seven tabs wrap to two rows instead of scrolling, three beside Close and four under it, each row on its own
-   rule (the ::before is the break and the first rule). The order keeps the reading order. Only the narrowest phones
-   and short landscape screens keep the scrolling row. */
+/* The eight tabs wrap to two rows instead of scrolling, four beside Close and four under it, each row on its own
+   rule (the ::before is the break and the first rule). The order keeps the reading order. Four tabs fit beside a 44px
+   Close only without side padding: the rows do not clip, so the focus ring sits outside the tab instead. Only the
+   narrowest phones and short landscape screens keep the scrolling row. */
 @media (min-width: 360px) and (min-height: 501px) {
-  #info .tabs { flex-wrap: wrap; row-gap: 0; overflow: visible; margin-right: 0; box-shadow: none; }
+  #info .tabs { flex-wrap: wrap; gap: 0 8px; overflow: visible; margin-right: 0; box-shadow: 18px 0 var(--panel); } /* the shadow covers the right padding, where a chart's last year label sticks out */
+  #info .tabs [role="tab"] { padding-left: 0; padding-right: 0; }
+  #info .tabs [role="tab"]:focus-visible { outline-offset: 2px; }
   #info .tabs::before { content: ""; order: 1; flex: 0 0 100%; margin-bottom: 6px; border-top: 1px solid var(--line); }
-  #info .tabs [role="tab"]:nth-of-type(n+4) { order: 2; }
+  #info .tabs [role="tab"]:nth-of-type(n+5) { order: 2; }
   #info .tabs .edge { display: none; }
 }
 /* True size is on and this panel is about something else: said only where the true-size card (with Done) is hidden. */
@@ -669,7 +702,8 @@ body.keys .kb { display: inline; }
 /* Windows contrast themes: keep the colour keys (the globe keeps its colours too) and show pressed states
    by more than colour. */
 @media (forced-colors: active) {
-  .swatches i, .sw, .vb i, .bt i, .kline i { forced-color-adjust: none; }
+  .swatches i, .sw, .vb i, .bt i, .kline i, .reflegend li svg { forced-color-adjust: none; }
+  button:active { outline: 2px solid Highlight; outline-offset: -2px; } /* the theme replaces the --press tint */
   .bt { outline: 1px solid CanvasText; }
   .sortbar button, .tabs [role="tab"] span { border-bottom-color: Canvas; }
   .tabs .edge { background: Canvas; } /* the fades are drawn in the panel colour, which the theme replaces */
@@ -724,8 +758,8 @@ body.keys .kb { display: inline; }
 .symbols figcaption { margin-top: 4px; font-size: 0.89286rem; color: var(--muted); }
 /* Many emblems are dark line art on a clear ground, so on the dark panel they get a sheet of paper behind them. */
 @media (prefers-color-scheme: dark) {
-  .symbols .arms img { padding: 4px; border-radius: 4px; background: #ece8de; }
-  #lightbox img.arms { background: #ece8de; }
+  .symbols .arms img { padding: 4px; border-radius: 4px; background: var(--sheet); }
+  #lightbox img.arms, #lightbox .pic:has(.arms) { background-color: var(--sheet); }
 }
 .photo button { display: block; width: 100%; padding: 0; border: 0; border-radius: 6px; overflow: hidden; background: var(--line); cursor: zoom-in; }
 .photo img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; }
@@ -735,10 +769,24 @@ body.keys .kb { display: inline; }
 #info h4 { margin: 12px 0 6px; font-size: 0.89286rem; font-weight: 600; color: var(--muted); }
 #lightbox { max-width: min(1100px, 94vw); max-height: 94vh; max-height: 94dvh; padding: 12px 14px 10px; border: 1px solid var(--line); border-radius: 10px;
   background: var(--panel); color: var(--text); }
-#lightbox::backdrop { background: rgb(0 0 0 / 0.72); }
+#lightbox::backdrop { background: var(--scrim, rgb(0 0 0 / 0.55)); }
+/* The viewer grows in from 98% as it fades in, and leaves faster than it came; the backdrop fades with it. Without
+   @starting-style or allow-discrete it simply appears and goes. */
+#lightbox, #lightbox::backdrop { opacity: 0; transition: opacity var(--dur-0) ease-in, transform var(--dur-0) ease-in, overlay var(--dur-0) allow-discrete, display var(--dur-0) allow-discrete; }
+#lightbox { transform: scale(0.98); }
+#lightbox[open], #lightbox[open]::backdrop { opacity: 1; }
+#lightbox[open] { transform: none; }
+#lightbox[open], #lightbox[open]::backdrop { transition-duration: var(--dur-1), var(--dur-1), var(--dur-1), var(--dur-1); transition-timing-function: var(--ease-out); }
+@starting-style {
+  #lightbox[open], #lightbox[open]::backdrop { opacity: 0; }
+  #lightbox[open] { transform: scale(0.98); }
+}
 #lightbox form { position: absolute; top: 8px; right: 8px; margin: 0; }
-/* app.js sizes the image from the photo's record before it loads; the grey box reads as loading. */
-#lightbox img { display: block; max-width: 100%; max-height: 76vh; max-height: 76dvh; margin: 0 auto; border-radius: 4px; background: var(--line); }
+/* app.js sizes the image from the photo's record before it loads; the thumbnail behind it (on the grey box) shows
+   until the photo fades in. */
+#lightbox .pic { width: fit-content; max-width: 100%; margin: 0 auto; border-radius: 4px; overflow: hidden; background: var(--line) center / 100% 100% no-repeat; }
+#lightbox img { display: block; max-width: 100%; max-height: 76vh; max-height: 76dvh; transition: opacity var(--dur-1) ease-out; }
+#lightbox img.wait { opacity: 0; }
 #lightbox .cap { margin: 10px 44px 2px 0; font-weight: 500; }
 #lightbox .credit { margin: 0; }
 /* A flag or emblem: the caption wraps to the image's width (app.js already keeps the image inside the screen). */
@@ -768,6 +816,8 @@ table.blood { margin-top: 2px; }
 .history .photo figcaption { display: block; -webkit-line-clamp: unset; }
 .history h4 { margin-top: 10px; }
 .reflegend li svg { width: 16px; height: 16px; flex: none; }
+/* The Atlas key's star and dot sit on a square of the globe's paper in dark mode, as they do on the globe. */
+@media (prefers-color-scheme: dark) { .reflegend li svg { background: var(--sheet); border-radius: 3px; } }
 
 /* Hot spots: one switch in the top bar for every place on the map. Wide screens use it in place of the eye
    button; phones, short of room in the bar, keep the eye button by the zoom controls. */
@@ -790,12 +840,12 @@ table.blood { margin-top: 2px; }
 #controls:not(:has(details[open])) .ctl-tabs { border-bottom: 0; border-radius: 8px; }
 .ctl-tabs button { flex: 1 1 auto; display: inline-flex; align-items: center; justify-content: center; gap: 3px; min-height: 42px;
   padding: 0 4px; margin-bottom: -1px; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none;
-  font-weight: 600; color: var(--muted); transition: color 0.15s ease-out, border-color 0.15s ease-out; }
+  font-weight: 600; color: var(--muted); transition: color var(--dur-1) ease-out, border-color var(--dur-1) ease-out; }
 @media (hover: hover) { .ctl-tabs button:hover { background: none; color: var(--text); } }
 .ctl-tabs button[aria-expanded="true"] { color: var(--text); border-bottom-color: var(--accent); }
 .ctl-tabs button:focus-visible { outline-offset: -3px; border-radius: 6px; }
 .ctl-tabs .off { font-weight: 400; color: var(--muted); white-space: pre; }
-.ctl-tabs .chev { width: 10px; height: 10px; flex: none; transition: transform 0.15s ease-out; }
+.ctl-tabs .chev { width: 10px; height: 10px; flex: none; transition: transform var(--dur-1) ease-out; }
 .ctl-tabs button:not([aria-expanded="true"]) .chev { display: none; }
 .ctl-tabs button[aria-expanded="true"] .chev { transform: rotate(180deg); }
 #controls details > summary { display: none; }

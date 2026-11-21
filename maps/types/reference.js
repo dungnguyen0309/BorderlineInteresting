@@ -151,14 +151,15 @@ const PARALLELS_LITE = new Map(PARALLELS.map(([lat]) => [lat, { type: 'LineStrin
 export default {
   id: 'reference', name: 'Atlas', group: 'Countries and borders',
   credit: '<a href="https://www.naturalearthdata.com/">Natural Earth</a> (public domain)',
-  layers: () => [], vector: 'none', click: 'country', drawsCapitals: true,
+  layers: () => [], vector: 'none', click: 'country', drawsCapitals: true, paper: true,
+  sea: SEA, // the empty globe drawn while the map data loads (app.js)
   ink: { text: INK, halo: 'rgba(255, 253, 245, 0.85)' }, // the globe is light in both themes, so the app's names use its ink
-  // With a colouring set the colouring's key is the one that matters: the star and dot need no key beside it, and the
-  // sentence about the tints would be wrong, so the map's own key is left out.
+  // With a colouring set the colouring's key is the one that matters: the star and dot need no key beside it, so the
+  // map's own key is left out.
   legend: ({ mode } = {}) => mode && mode !== 'none' ? '' : `<ul class="swatches reflegend">
       <li><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5l1.8 4.3 4.6.3-3.6 2.9 1.2 4.5L8 11l-4 2.5 1.2-4.5L1.6 6.1l4.6-.3z" fill="#8b1d1d" stroke="rgba(255, 253, 245, 0.85)" stroke-width="1.2" stroke-linejoin="round" paint-order="stroke"/></svg>National capital</li>
       <li><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="2.6" fill="${INK}" stroke="rgba(255, 253, 245, 0.85)"/></svg>City</li>
-    </ul><p class="note keep">The tints only tell neighbours apart; they carry no meaning.</p>`,
+    </ul>`,
 
   overlay: {
     async load() {
@@ -194,7 +195,8 @@ export default {
         const [x, y] = proj(c.at);
         if (c.cap) {
           star(ctx, x, y, k < 2 ? 3.6 : 4.6);
-          ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255, 253, 245, 0.85)'; ctx.stroke();
+          // A 1.5px ring, so the red star stays clear of the deepest data fills under a colouring too.
+          ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255, 253, 245, 0.9)'; ctx.stroke();
           ctx.fillStyle = '#8b1d1d'; ctx.fill();
         } else {
           ctx.beginPath(); ctx.arc(x, y, k < 6 ? 2 : 2.4, 0, 2 * Math.PI);

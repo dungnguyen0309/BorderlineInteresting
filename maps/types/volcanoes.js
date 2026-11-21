@@ -162,7 +162,7 @@ function setup(api) {
 }
 
 export default {
-  id: 'volcanoes', name: 'Volcanic hazard', group: 'Earth science',
+  id: 'volcanoes', name: 'Volcanic hazard', group: 'Earth science', dataMap: true,
   // A getter, so Sources shows the copy date once the data has loaded.
   get credit() {
     return `Volcanoes: Global Volcanism Program, <a href="https://doi.org/10.5479/si.GVP.VOTW5-2026.5.4">Volcanoes of the World v. 5.4.0</a> (7 Aug 2026${meta ? `, copied ${meta.fetched}` : ''}), Smithsonian Institution, for personal, educational and non-commercial use (<a href="https://volcano.si.edu/gvp_termsofuse.cfm">terms</a>). Hazard index and population exposure: GVM and IAVCEI for UNISDR <a href="https://data.humdata.org/dataset/a60ac839-920d-435a-bf7d-25855602699d">GAR15</a> (2015), free for non-commercial use`;

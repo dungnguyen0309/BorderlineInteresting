@@ -251,7 +251,7 @@ async function query([lon, lat], api) {
 }
 
 export default {
-  id: 'species', name: 'Species distribution', group: 'Weather and life',
+  id: 'species', name: 'Species distribution', group: 'Weather and life', dataMap: true,
   ownsColour: true,
   credit: 'Occurrence records: <a href="https://www.gbif.org">GBIF.org</a> and its data publishers, each record under CC0 1.0, CC BY 4.0 or CC BY-NC 4.0 (<a href="https://www.gbif.org/terms">terms</a>). Base map: <a href="https://tile.gbif.org/ui/">GBIF</a>, © <a href="https://openmaptiles.org/">OpenMapTiles</a> © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   onMap: '© <a href="https://www.openmaptiles.org/copyright">OpenMapTiles</a> © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',

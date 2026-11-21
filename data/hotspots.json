@@ -331,92 +331,92 @@
         {"title": "GIUK gap", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/GIUK_gap"}
       ] },
 
-    { "id": "diego-garcia", "layer": "base", "name": "Diego Garcia", "at": [72.42, -7.31], "countries": ["GBR", "USA", "MUS"],
+    { "id": "diego-garcia", "layer": "base", "name": "Diego Garcia", "at": [72.42, -7.31], "countries": ["GBR", "USA", "MUS"], "host": "GBR", "operator": ["USA", "GBR"],
       "text": "A US-UK base in the Chagos Islands used by long-range bombers and ships across the Indian Ocean. A 2025 treaty would hand the islands to Mauritius and lease the base back to the UK for 99 years; it is signed but not yet in force.",
       "asOf": "November 2026",
       "sources": [
         {"title": "UK-Mauritius Chagos sovereignty deal stalls amid fears of further delays", "publisher": "Al Jazeera, 2 October 2026", "url": "https://www.aljazeera.com/news/2026/10/2/uk-mauritius-chagos-sovereignty-deal-stalls-amid-fears-of-further-delays"},
         {"title": "Diego Garcia", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Diego_Garcia"}
       ] },
-    { "id": "djibouti-bases", "layer": "base", "name": "Djibouti bases", "at": [43.15, 11.55], "countries": ["DJI", "USA", "CHN", "FRA", "JPN"],
+    { "id": "djibouti-bases", "layer": "base", "name": "Djibouti bases", "at": [43.15, 11.55], "countries": ["DJI", "USA", "CHN", "FRA", "JPN"], "host": "DJI", "operator": ["USA", "CHN", "FRA", "JPN", "ITA"],
       "text": "Hosts Camp Lemonnier, the largest US base in Africa, China's first overseas military base (opened 2017), and French, Japanese and Italian forces, all next to Bab el-Mandeb.",
       "asOf": "November 2026",
       "sources": [
         {"title": "Foreign military bases in Djibouti", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Foreign_military_bases_in_Djibouti"},
         {"title": "Camp Lemonnier", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Camp_Lemonnier"}
       ] },
-    { "id": "guam", "layer": "base", "name": "Guam bases", "at": [144.93, 13.58], "countries": ["USA"],
+    { "id": "guam", "layer": "base", "name": "Guam bases", "at": [144.93, 13.58], "countries": ["USA"], "host": "USA", "operator": ["USA"],
       "text": "A US territory with Andersen Air Force Base and a naval base, a major strategic asset for US forces in the western Pacific.",
       "asOf": "November 2026",
       "sources": [
         {"title": "Guam", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Guam"},
         {"title": "Andersen Air Force Base", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Andersen_Air_Force_Base"}
       ] },
-    { "id": "okinawa", "layer": "base", "name": "Okinawa", "at": [127.77, 26.35], "countries": ["JPN", "USA"],
+    { "id": "okinawa", "layer": "base", "name": "Okinawa", "at": [127.77, 26.35], "countries": ["JPN", "USA"], "host": "JPN", "operator": ["USA"],
       "text": "Hosts over 70% of US military facilities in Japan, including Kadena Air Base.",
       "asOf": "November 2026",
       "sources": [
         {"title": "Okinawa’s US Military Base Burden Little Changed Since Reversion 50 Years Ago", "publisher": "Nippon.com, 25 May 2022", "url": "https://www.nippon.com/en/japan-data/h01329/"},
         {"title": "Kadena Air Base", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Kadena_Air_Base"}
       ] },
-    { "id": "yokosuka", "layer": "base", "name": "Yokosuka", "at": [139.67, 35.29], "countries": ["JPN", "USA"],
+    { "id": "yokosuka", "layer": "base", "name": "Yokosuka", "at": [139.67, 35.29], "countries": ["JPN", "USA"], "host": "JPN", "operator": ["USA"],
       "text": "Home port of the US Seventh Fleet and the only US aircraft carrier based abroad.",
       "asOf": "November 2026",
       "sources": [
         {"title": "United States Fleet Activities Yokosuka", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/United_States_Fleet_Activities_Yokosuka"}
       ] },
-    { "id": "humphreys", "layer": "base", "name": "Camp Humphreys", "at": [127.03, 36.96], "countries": ["KOR", "USA"],
+    { "id": "humphreys", "layer": "base", "name": "Camp Humphreys", "at": [127.03, 36.96], "countries": ["KOR", "USA"], "host": "KOR", "operator": ["USA"],
       "text": "The largest US base abroad by area, south of Seoul. About 28,500 US troops are stationed in South Korea.",
       "asOf": "November 2026",
       "sources": [
         {"title": "Camp Humphreys", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Camp_Humphreys"}
       ] },
-    { "id": "ramstein", "layer": "base", "name": "Ramstein", "at": [7.6, 49.44], "countries": ["DEU", "USA"],
+    { "id": "ramstein", "layer": "base", "name": "Ramstein", "at": [7.6, 49.44], "countries": ["DEU", "USA"], "host": "DEU", "operator": ["USA"],
       "text": "Headquarters of US Air Forces in Europe and NATO's air command.",
       "asOf": "November 2026",
       "sources": [
         {"title": "Ramstein Air Base", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Ramstein_Air_Base"}
       ] },
-    { "id": "al-udeid", "layer": "base", "name": "Al Udeid", "at": [51.31, 25.12], "countries": ["QAT", "USA"],
+    { "id": "al-udeid", "layer": "base", "name": "Al Udeid", "at": [51.31, 25.12], "countries": ["QAT", "USA"], "host": "QAT", "operator": ["USA"],
       "text": "The largest US base in the Middle East and forward headquarters of US Central Command. Iranian missiles hit it in June 2025 and again during the 2026 war, damaging its air operations centre.",
       "asOf": "November 2026",
       "sources": [
         {"title": "Iran Severely Damaged US Air Ops Center in Qatar Soon After War Began", "publisher": "Air & Space Forces Magazine, 5 June 2026", "url": "https://www.airandspaceforces.com/us-air-operations-center-qatar-severely-damaged-iran/"}
       ] },
-    { "id": "rota", "layer": "base", "name": "Rota", "at": [-6.35, 36.62], "countries": ["ESP", "USA"],
+    { "id": "rota", "layer": "base", "name": "Rota", "at": [-6.35, 36.62], "countries": ["ESP", "USA"], "host": "ESP", "operator": ["ESP", "USA"],
       "text": "Spanish naval base hosting US destroyers that form part of NATO's missile defence in Europe.",
       "asOf": "November 2026",
       "sources": [
         {"title": "Naval Station Rota", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Naval_Station_Rota"}
       ] },
-    { "id": "incirlik", "layer": "base", "name": "Incirlik", "at": [35.43, 37.0], "countries": ["TUR", "USA"],
+    { "id": "incirlik", "layer": "base", "name": "Incirlik", "at": [35.43, 37.0], "countries": ["TUR", "USA"], "host": "TUR", "operator": ["TUR", "USA"],
       "text": "Turkish air base near Adana, used mainly by the US and Turkish air forces.",
       "asOf": "November 2026",
       "sources": [
         {"title": "Incirlik Air Base", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Incirlik_Air_Base"}
       ] },
-    { "id": "pearl-harbor", "layer": "base", "name": "Pearl Harbor", "at": [-157.95, 21.35], "countries": ["USA"],
+    { "id": "pearl-harbor", "layer": "base", "name": "Pearl Harbor", "at": [-157.95, 21.35], "countries": ["USA"], "host": "USA", "operator": ["USA"],
       "text": "Headquarters of the US Pacific Fleet. US Indo-Pacific Command is also based in Hawaii.",
       "asOf": "November 2026",
       "sources": [
         {"title": "United States Pacific Fleet", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/United_States_Pacific_Fleet"},
         {"title": "United States Indo-Pacific Command", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/United_States_Indo-Pacific_Command"}
       ] },
-    { "id": "sevastopol", "layer": "base", "name": "Sevastopol", "at": [33.52, 44.6], "countries": ["RUS", "UKR"],
+    { "id": "sevastopol", "layer": "base", "name": "Sevastopol", "at": [33.52, 44.6], "countries": ["RUS", "UKR"], "operator": ["RUS"],
       "text": "Main base of Russia's Black Sea Fleet. Ukrainian drone and missile strikes after 2022 pushed many of its ships east to Novorossiysk.",
       "asOf": "November 2026",
       "sources": [
         {"title": "War in Ukraine: Russia moves warships out of Crimea as Ukrainian strikes continue", "publisher": "Euronews, 5 October 2023", "url": "https://www.euronews.com/2023/10/05/war-in-ukraine-russia-moves-warships-out-of-crimea-as-ukrainian-strikes-continue"},
         {"title": "Sevastopol Naval Base", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Sevastopol_Naval_Base"}
       ] },
-    { "id": "tartus", "layer": "base", "name": "Tartus", "at": [35.87, 34.89], "countries": ["RUS", "SYR"],
+    { "id": "tartus", "layer": "base", "name": "Tartus", "at": [35.87, 34.89], "countries": ["RUS", "SYR"], "host": "SYR", "operator": ["SYR", "RUS"],
       "text": "Russia's naval base in the Mediterranean, leased from Syria since 2017. After Assad fell in December 2024 the Russian navy withdrew from it; under an August 2026 memorandum Syria takes over the commercial quay and the base becomes a joint Syrian-Russian training centre.",
       "asOf": "November 2026",
       "sources": [
         {"title": "Russia and Syria agree to turn Russian military bases into joint training centers", "publisher": "Meduza, 10 August 2026", "url": "https://meduza.io/en/news/2026/08/10/russia-and-syria-agree-to-turn-russian-military-bases-into-joint-training-centers"},
         {"title": "Tartus naval base", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Tartus_naval_base"}
       ] },
-    { "id": "kaliningrad", "layer": "base", "name": "Kaliningrad", "at": [20.5, 54.7], "countries": ["RUS", "POL", "LTU"],
+    { "id": "kaliningrad", "layer": "base", "name": "Kaliningrad", "at": [20.5, 54.7], "countries": ["RUS", "POL", "LTU"], "host": "RUS", "operator": ["RUS"],
       "text": "A Russian exclave between Poland and Lithuania, home of the Baltic Fleet and nuclear-capable Iskander missiles. The 65 km Suwałki Gap between it and Belarus is the narrow land link between the Baltic states and the rest of NATO.",
       "asOf": "November 2026",
       "sources": [
@@ -424,27 +424,27 @@
         {"title": "Suwałki Gap", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Suwa%C5%82ki_Gap"},
         {"title": "9K720 Iskander", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/9K720_Iskander"}
       ] },
-    { "id": "severomorsk", "layer": "base", "name": "Severomorsk", "at": [33.42, 69.07], "countries": ["RUS"],
+    { "id": "severomorsk", "layer": "base", "name": "Severomorsk", "at": [33.42, 69.07], "countries": ["RUS"], "host": "RUS", "operator": ["RUS"],
       "text": "Main base of Russia's Northern Fleet, on the Kola Peninsula.",
       "asOf": "November 2026",
       "sources": [
         {"title": "Severomorsk", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Severomorsk"}
       ] },
-    { "id": "yulin", "layer": "base", "name": "Yulin (Hainan)", "at": [109.7, 18.2], "countries": ["CHN"],
+    { "id": "yulin", "layer": "base", "name": "Yulin (Hainan)", "at": [109.7, 18.2], "countries": ["CHN"], "host": "CHN", "operator": ["CHN"],
       "text": "Chinese naval base near Sanya on Hainan. Its eastern part, Longpo, has an underground harbour for nuclear submarines on the South China Sea.",
       "asOf": "November 2026",
       "sources": [
         {"title": "Yulin Naval Base", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Yulin_Naval_Base"},
         {"title": "Longpo Naval Base", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Longpo_Naval_Base"}
       ] },
-    { "id": "ream", "layer": "base", "name": "Ream", "at": [103.63, 10.5], "countries": ["KHM", "CHN"],
+    { "id": "ream", "layer": "base", "name": "Ream", "at": [103.63, 10.5], "countries": ["KHM", "CHN"], "host": "KHM", "operator": ["KHM"],
       "text": "Cambodian naval base rebuilt with Chinese money. Chinese warships have docked there since late 2023.",
       "asOf": "November 2026",
       "sources": [
         {"title": "Chinese navy ships are first to dock at new pier at Cambodian naval base", "publisher": "AP, via NBC News, 8 December 2023", "url": "https://www.nbcnews.com/news/world/chinese-navy-ships-are-first-dock-new-pier-cambodian-naval-base-rcna128681"},
         {"title": "Ream Naval Base", "publisher": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Ream_Naval_Base"}
       ] },
-    { "id": "cam-ranh", "layer": "base", "name": "Cam Ranh Bay", "at": [109.2, 11.95], "countries": ["VNM", "USA", "RUS"],
+    { "id": "cam-ranh", "layer": "base", "name": "Cam Ranh Bay", "at": [109.2, 11.95], "countries": ["VNM", "USA", "RUS"], "host": "VNM", "operator": ["VNM"],
       "text": "A deep-water bay in Vietnam used by US forces during the Vietnam War and by Soviet and then Russian forces until 2002. Vietnam has since rebuilt it as a port that also serves foreign navies.",
       "asOf": "November 2026",
       "sources": [

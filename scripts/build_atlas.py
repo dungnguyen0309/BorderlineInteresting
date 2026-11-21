@@ -1,4 +1,4 @@
-"""Build data/atlas.json: names, codes, capitals, 50-year trends, age pyramid and economy mix per country.
+"""Build data/atlas.json: names, codes, capitals, 50-year trends, age pyramid, economy mix and military series per country.
 
 Run after build_data.py: python scripts/build_atlas.py
 Standard library only. app.js fetches the file the first time a country panel opens.
@@ -27,8 +27,17 @@ LATEST = {
     "net": "IT.NET.USER.ZS", "gini": "SI.POV.GINI", "forest": "AG.LND.FRST.ZS", "co2": "EN.GHG.CO2.PC.CE.AR5",
     "agri": "NV.AGR.TOTL.ZS", "ind": "NV.IND.TOTL.ZS", "serv": "NV.SRV.TOTL.ZS",
     "fossil": "EG.ELC.FOSL.ZS", "nuc": "EG.ELC.NUCL.ZS", "ren": "EG.ELC.RNEW.ZS",
+    # Security tab: military spending as a share of government spending (SIPRI), armed forces share of the labour force (IISS).
+    "milGov": "MS.MIL.XPND.ZS", "milLab": "MS.MIL.TOTL.TF.ZS",
 }
 SERIES = {"pop": "SP.POP.TOTL", "gdp": "NY.GDP.MKTP.CD"}
+# Security tab yearly series from MIL_FIRST_YEAR, stored under "mil" and aligned to the top-level "milYears".
+# gdp: % of GDP; usd: millions of current US$; pers: armed forces personnel; imp/exp: millions of SIPRI TIV.
+MIL_FIRST_YEAR = 1990
+MIL_SERIES = {"gdp": "MS.MIL.XPND.GD.ZS", "usd": "MS.MIL.XPND.CD", "pers": "MS.MIL.TOTL.P1",
+              "imp": "MS.MIL.MPRT.KD", "exp": "MS.MIL.XPRT.KD"}
+MIL_ROUND = {"gdp": lambda v: round(v, 2), "usd": lambda v: round(v / 1e6) if v >= 1e8 else round(v / 1e6, 1),
+             "pers": round, "imp": lambda v: round(v / 1e6), "exp": lambda v: round(v / 1e6)}
 # 100% bars are built only from a year every part shares, so shares from different years never add up.
 MIXES = {"elec": ["fossil", "nuc", "ren"], "sec": ["agri", "ind", "serv"]}
 # Lowest believable total for a bar: sector shares leave out only taxes less subsidies (every real row is 78+).
@@ -82,14 +91,17 @@ def main():
     codes = {**{k: ("latest", v) for k, v in LATEST.items()},
              **{k: ("series", v) for k, v in SERIES.items()},
              **{"y_" + k: ("recent", LATEST[k]) for parts in MIXES.values() for k in parts},
-             **{f"{b}{s}": ("latest", f"SP.POP.{b}.{s}.5Y") for b in BANDS for s in ("MA", "FE")}}
-    fetch = {"latest": latest, "series": series, "recent": lambda code: series(code, OLDEST_YEAR)}
+             **{f"{b}{s}": ("latest", f"SP.POP.{b}.{s}.5Y") for b in BANDS for s in ("MA", "FE")},
+             **{"m_" + k: ("mil", v) for k, v in MIL_SERIES.items()}}
+    fetch = {"latest": latest, "series": series, "recent": lambda code: series(code, OLDEST_YEAR),
+             "mil": lambda code: series(code, MIL_FIRST_YEAR)}
     with concurrent.futures.ThreadPoolExecutor(6) as pool:
         futures = {k: pool.submit(fetch[kind], code) for k, (kind, code) in codes.items()}
         got = {k: f.result() for k, f in futures.items()}
 
     last_year = max(y for s in SERIES for c in got[s].values() for y in c)
     years = list(range(FIRST_YEAR, last_year + 1))
+    mil_years = list(range(MIL_FIRST_YEAR, max(y for k in MIL_SERIES for c in got["m_" + k].values() for y in c) + 1))
     left = set(PATCHES["leftDriving"])
     out = {}
     for iso in isos:
@@ -120,6 +132,15 @@ def main():
             if len(s) >= 2:
                 # GDP in millions of US$ keeps the file small; the app scales it back.
                 rec[k] = [None if y not in s else round(s[y] / 1e6) if k == "gdp" else round(s[y]) for y in years]
+        mil = {}
+        for k in MIL_SERIES:
+            s = got["m_" + k].get(iso, {})
+            if s:
+                mil[k] = [MIL_ROUND[k](s[y]) if y in s else None for y in mil_years]
+                while mil[k][-1] is None:  # trailing gaps only cost bytes; the app pads to milYears
+                    mil[k].pop()
+        if mil:
+            rec["mil"] = mil
         pyr = [[got[f"{b}MA"].get(iso), got[f"{b}FE"].get(iso)] for b in BANDS]
         if all(m_ and f_ for m_, f_ in pyr):
             rec["pyr"] = [[m_[0], f_[0]] for m_, f_ in pyr]
@@ -149,7 +170,8 @@ def main():
             rec.pop("x", None)
         out[iso] = {k: v for k, v in rec.items() if v not in (None, [], "")}
 
-    data = {"built": datetime.date.today().isoformat(), "years": [years[0], years[-1]], "countries": out}
+    data = {"built": datetime.date.today().isoformat(), "years": [years[0], years[-1]],
+            "milYears": [mil_years[0], mil_years[-1]], "countries": out}
 
     # Self-checks: a changed source shape or a wrong join would show up here.
     assert len(out) >= 230, len(out)
@@ -165,6 +187,11 @@ def main():
     assert all(MIX_FLOOR[m] < sum(c[m][1:]) <= 100.5 for c in out.values() for m in MIXES if m in c)
     assert "sec" not in out["VEN"] and "sec" not in out["LBN"]
     assert out["DEU"]["elec"][0] <= min(out["DEU"]["x"][k][1] for k in MIXES["elec"])
+    assert out["USA"]["mil"]["usd"][0] > 250000 and out["USA"]["mil"]["gdp"][0] > 4  # 1990, millions of US$
+    assert all(len(v) <= len(mil_years) for c in out.values() for v in c.get("mil", {}).values())
+    assert out["DEU"]["mil"]["pers"][-1] > 100000 and "milGov" in out["DEU"]["x"]
+    assert max(v or 0 for v in out["USA"]["mil"]["exp"]) > 5000  # millions of TIV
+    print("military series:", {k: sum(k in c.get("mil", {}) for c in out.values()) for k in MIL_SERIES})
     print("100% bars:", {m: sum(m in c for c in out.values()) for m in MIXES})
 
     path = ROOT / "data" / "atlas.json"

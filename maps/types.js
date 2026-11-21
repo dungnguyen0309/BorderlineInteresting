@@ -15,6 +15,15 @@
 //                             'full' (fills and borders), 'lines' (borders and coast only), 'none'
 //   click                     'country' (a click opens the country) or 'point' (a click reads the map there)
 //   query(at)                 async: [[label, html], ...] for a clicked point [lon, lat] (point maps)
+//   more(at, api)             optional async: HTML shown under those rows once ready (Airports: view from above, photos)
+//   featureAt(at)             optional async: the feature standing at a clicked or linked point, as overlay.pick
+//                             returns one, or null. The panel then takes its title and subtitle, and the address its
+//                             own position, so a click beside its marker or a link opens it as if picked (Airports)
+//   places()                  optional: features searched (Ctrl K) while this type is shown, or null until loaded;
+//                             each also has names (strings matched), kind (shown beside it), rank (lower first) and
+//                             k (the zoom it opens at). Return the same array each time: it is indexed once
+//   photo(i)                  optional: the i-th photo record { title, img, page, author, licence, w, h } for the
+//                             lightbox; buttons carry data-photo="map|<type id>|<i>"
 //   legend({ mode })          HTML key for the legend card, or ''; mode is the app's colouring (a figure or a group).
 //                             Only short status or unit lines (<p class="note keep">); no notes on method or caveats
 //   ownsColour                optional true (or a getter): the map colours the countries itself, so the app hides
@@ -22,7 +31,11 @@
 //   drawsCapitals             optional true: the map draws capitals itself, so the app hides its Capitals layer
 //   darkTiles                 optional true: the tiles are light street-map tiles only, so in dark mode the app
 //                             inverts them (style.css), keeping hues, instead of a bright map under the dark chrome
-//   ink                       optional { text, halo }: colours for the app's own names, for a map that looks the same in both themes
+//   paper                     optional true: the globe is light in both themes (the Atlas, light relief), so in dark mode
+//                             the app fills, marks and names it in the light theme's colours and tones it down a little
+//   ink                       optional { text, halo }: the app's own names in the map's ink instead (a paper map)
+//   dataMap                   optional true: the map itself shows data (hazards, weather, zones, airports), so hot-spot
+//                             markers step back as under a colouring (small, grey, shape only) and the key matches
 //   overlay                   optional data drawn on the 2D canvas over the tiles:
 //                               load(api)            Promise, called once when the type is first shown
 //                               draw(api)            draws on api.ctx with api.proj / api.path
@@ -30,6 +43,10 @@
 //                                                    { title, sub, at: [lon, lat], rows: [[label, html]] } or null
 //   paint(api)                optional: draws the sea and the countries itself (the app then skips its own fills)
 //   labels(api)               optional: letters the map itself in place of the app's country and capital names
+//   placeLabels(api)          optional: places the map's own labels in the app's label pass, before the country names
+//                             (api.boxes: the boxes taken so far; push each label's box)
+//   namesFirst                optional true: placeLabels runs after the country names, so they keep their places
+//   drawSel(api)              optional: draws the open point's own marker (api.sel), over the hot spots and under its ring
 //   setup(api)                optional, called each time the type is shown (e.g. to add a control); it reads its
 //                             starting settings from the address when ?map= is this type
 //   params()                  optional: the type's own settings for the address, e.g. { view: 'day', day: '2026-11-14' }
@@ -39,7 +56,8 @@
 //   maxK                      optional: how far the map zooms in, as k (default 30000, about a street), or
 //                             ({ base, dpr }) => k for a limit that follows the globe's size and the screen
 //   countryLabels             optional false: the tiles name the countries, so the app does not
-// api (from app.js): { ctx, proj, path, k, w, h, dpr, center, visible(p), dark, C, moving, lite, draw(), esc, fmt }
+// api (from app.js): { ctx, proj, path, k, w, h, dpr, center, visible(p), dark, C, sel, moving, lite, draw(), esc, fmt }
+// (dark and C are the ground's: a paper globe, and any colouring, is light in both themes)
 // (lite: a finger is moving the globe on a touch screen, so the frame should be as light as the map allows)
 
 import { terrainSource, reliefLegend } from './relief.js';
@@ -51,8 +69,6 @@ import reference from './types/reference.js';
 const later = (id, name, group, live) => ({ id, name, group, live, later: true });
 const timezones = later('timezones', 'Time zones', 'Countries and borders');
 const postal = later('postal', 'Postal codes', 'Countries and borders');
-const flights = later('flights', 'Flights', 'Live traffic', true);
-const maritime = later('maritime', 'Shipping', 'Live traffic', true);
 const income = later('income', 'GDP per person by region', 'Economy');
 const resources = later('resources', 'Resources', 'Economy');
 const photographic = later('photographic', 'Photographic', 'Land and sea');
@@ -63,6 +79,7 @@ const volcanoes = later('volcanoes', 'Volcanic hazard', 'Earth science');
 const weather = later('weather', 'Weather', 'Weather and life', true);
 const hardiness = later('hardiness', 'Plant hardiness zones', 'Weather and life');
 const species = later('species', 'Species distribution', 'Weather and life');
+const airports = later('airports', 'Airports', 'Transport');
 
 export const OSM_CREDIT = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 const TERRAIN_CREDIT = '<a href="https://registry.opendata.aws/terrain-tiles/">Terrain Tiles</a> (Mapzen on AWS: SRTM, GMTED2010, ETOPO1, GEBCO and <a href="https://github.com/tilezen/joerd/blob/master/docs/attribution.md">others</a>)';
@@ -124,7 +141,7 @@ const topographic = {
   // OpenTopoMap asks for this notice, clearly visible (opentopomap.org/about).
   onMap: ({ k }) => (k < 22 ? '' : `Map data ${OSM_CREDIT}, SRTM; map style © <a href="https://opentopomap.org/about">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA</a>)`),
   layers: ({ k }) => [{ src: TERRAIN_CAPS.topo }, { src: TERRAIN.topo }, ...(k < 22 ? [] : [{ src: OPENTOPO, opacity: fade(k, 22, 45) }])],
-  vector: 'lines', click: 'point',
+  vector: 'lines', click: 'point', paper: true,
   legend: () => reliefLegend('topo', { from: -3000, to: 6500 })
 };
 
@@ -151,12 +168,12 @@ const flags = {
 };
 
 export const MAP_TYPES = [
-  reference, political, roads, flights, maritime, timezones, postal, income, resources, flags,
+  reference, political, roads, airports, timezones, postal, income, resources, flags,
   physical, photographic, topographic, bathymetric,
   geologic, plates, earthquakes, volcanoes,
   weather, hardiness, species
 ];
-export const GROUP_ORDER = ['Countries and borders', 'Economy', 'Live traffic', 'Land and sea', 'Earth science', 'Weather and life'];
+export const GROUP_ORDER = ['Countries and borders', 'Economy', 'Transport', 'Land and sea', 'Earth science', 'Weather and life'];
 // The name as the menu, the search and the key show it.
 export const label = t => (t.live ? `${t.name} (live)` : t.name);
 export const mapType = id => MAP_TYPES.find(t => t.id === id) || political;
