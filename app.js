@@ -1131,8 +1131,12 @@ const fitBase = () => {
   const fr = freeRect(); S.base = Math.min(S.base, fr.w / 2 - 40, fr.h / 2 - 16); proj.scale(S.base * S.k); };
 const baseSize = () => Math.min(narrow() ? S.w * 0.46 : stacked() ? S.w / 2 - 40 : S.w * 0.42, S.h * 0.42);
 // The globe's sea and rim, drawn at once so the screen is not empty while the map data loads; render() takes over.
+// Canvas pixels per CSS pixel. Up to 3, except on iPhone and iPad: there WebKit showed a full-screen 3x canvas
+// softer than a 2x one (screenshots from an iPhone, 2026-11-22), so WebKit on iOS draws at 2x.
+const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const pixelRatio = () => Math.min(devicePixelRatio || 1, IOS ? 2 : 3);
 function drawSphere() {
-  S.w = innerWidth; S.h = innerHeight; S.dpr = Math.min(devicePixelRatio || 1, 3);
+  S.w = innerWidth; S.h = innerHeight; S.dpr = pixelRatio();
   canvas.width = S.w * S.dpr; canvas.height = S.h * S.dpr;
   canvas.style.width = S.w + 'px'; canvas.style.height = S.h + 'px';
   S.base = baseSize(); fitBase();
@@ -1148,7 +1152,7 @@ function drawSphere() {
 }
 // Safari on iPhone can report the window's size or pixel density before they are final, and fires no resize until
 // the toolbar moves (a first touch). Measured again when the app has settled, and whenever the visual viewport changes.
-const remeasure = () => { if (innerWidth !== S.w || innerHeight !== S.h || Math.min(devicePixelRatio || 1, 3) !== S.dpr) { resize(); draw(); } };
+const remeasure = () => { if (innerWidth !== S.w || innerHeight !== S.h || pixelRatio() !== S.dpr) { resize(); draw(); } };
 // ?debug: the numbers that decide how sharp the globe is, for a device the app cannot be tested on directly.
 function debugBox() {
   const box = document.createElement('pre');
@@ -1168,7 +1172,7 @@ function resize() {
   const wasNarrow = narrow(), wasFold = foldKey(), wasWide = S.w >= 1180, wasShort = S.h <= 500;
   S.w = innerWidth; S.h = innerHeight;
   S.tallKey = false; // measured again for the new size (renderLegend)
-  S.dpr = Math.min(devicePixelRatio || 1, 3); // 3x phones: at 2x the globe looked soft
+  S.dpr = pixelRatio(); // 3x Android phones: at 2x the globe looked soft
   if (S.dpr !== patternDpr) makePatterns();
   // Narrowing to phone width with a panel open: close the control sections, as select() does on phones,
   // so the sheet is not squeezed to its title bar.
@@ -3549,6 +3553,14 @@ async function start() {
   S.booting = true;
   const booted = () => { S.booting = false; for (const t of ['pointerdown', 'keydown', 'wheel']) removeEventListener(t, booted, true); };
   for (const t of ['pointerdown', 'keydown', 'wheel']) addEventListener(t, booted, true);
+  // d3's zoom 'end' did not always arrive on iPhone, leaving the globe in its light moving frames after the finger
+  // lifted (?debug showed gesture true): when no pointer is down any more, the gesture is over.
+  const down = new Set();
+  addEventListener('pointerdown', e => down.add(e.pointerId), true);
+  for (const t of ['pointerup', 'pointercancel']) addEventListener(t, e => {
+    down.delete(e.pointerId);
+    if (!down.size && S.gesture) setTimeout(() => { if (!down.size && S.gesture) { S.gesture = false; if (S.moving) moving(); } }, 50);
+  }, true);
   // A tab restored from the back-forward cache, or shown again, gets a fresh full-detail frame.
   addEventListener('pageshow', e => { if (e.persisted) { S.moving = false; remeasure(); draw(); } });
   document.addEventListener('visibilitychange', () => { if (!document.hidden && !S.gesture) { S.moving = false; draw(); } });
