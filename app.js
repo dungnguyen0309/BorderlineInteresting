@@ -876,7 +876,17 @@ function render() {
     ctx.lineCap = 'butt';
   }
   stroke(SPHERE, P.coast, 1);
+  dimPaper();
   fast = null;
+}
+// A paper globe in the dark theme is toned down 8% in the canvas itself. A CSS filter did the same, but Safari on
+// iPhone drew the filtered canvas at a lower resolution, so the globe looked soft until something redrew it.
+function dimPaper(on = paperGlobe()) {
+  if (!on) return;
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalCompositeOperation = 'source-atop'; ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.restore();
 }
 
 // A label box [x0, y0, x1, y1] lies wholly on the globe's face, so no name runs past the limb onto the page.
@@ -1133,6 +1143,23 @@ function drawSphere() {
   ctx.beginPath(); path(SPHERE);
   ctx.fillStyle = mt.sea || P.ocean; ctx.fill();
   ctx.lineWidth = 1; ctx.strokeStyle = P.coast; ctx.stroke();
+  dimPaper(darkQuery.matches && light);
+}
+// Safari on iPhone can report the window's size or pixel density before they are final, and fires no resize until
+// the toolbar moves (a first touch). Measured again when the app has settled, and whenever the visual viewport changes.
+const remeasure = () => { if (innerWidth !== S.w || innerHeight !== S.h || Math.min(devicePixelRatio || 1, 3) !== S.dpr) { resize(); draw(); } };
+// ?debug: the numbers that decide how sharp the globe is, for a device the app cannot be tested on directly.
+function debugBox() {
+  const box = document.createElement('pre');
+  box.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:9;margin:0;padding:6px 8px;font:12px/1.4 monospace;background:rgba(0,0,0,.75);color:#fff;pointer-events:none';
+  document.body.append(box);
+  const show = () => { const v = window.visualViewport; box.textContent = `dpr ${devicePixelRatio} (used ${S.dpr})
+window ${innerWidth}x${innerHeight} (used ${S.w}x${S.h})
+canvas ${canvas.width}x${canvas.height} css ${canvas.clientWidth}x${canvas.clientHeight}
+viewport scale ${v ? v.scale.toFixed(2) : '?'}
+moving ${!!S.moving} booting ${!!S.booting} flying ${!!S.flying}
+filter ${getComputedStyle(canvas).filter}`; };
+  show(); setInterval(show, 500);
 }
 function resize() {
   const wasNarrow = narrow(), wasFold = foldKey(), wasWide = S.w >= 1180, wasShort = S.h <= 500;
@@ -3514,12 +3541,13 @@ function failLoad(message) {
 }
 
 async function start() {
+  const debug = new URLSearchParams(location.search).has('debug'); // read before fromUrl rewrites the address
   // Start-up: placements snap (no glide) and draw at full detail, until the first input or a few seconds after load.
   S.booting = true;
   const booted = () => { S.booting = false; for (const t of ['pointerdown', 'keydown', 'wheel']) removeEventListener(t, booted, true); };
   for (const t of ['pointerdown', 'keydown', 'wheel']) addEventListener(t, booted, true);
   // A tab restored from the back-forward cache, or shown again, gets a fresh full-detail frame.
-  addEventListener('pageshow', e => { if (e.persisted) { S.moving = false; draw(); } });
+  addEventListener('pageshow', e => { if (e.persisted) { S.moving = false; remeasure(); draw(); } });
   document.addEventListener('visibilitychange', () => { if (!document.hidden && !S.gesture) { S.moving = false; draw(); } });
   $('#status').textContent = 'Loading map…';
   readTheme();
@@ -3553,7 +3581,10 @@ async function start() {
   // Data Saver: photos load with the first panel instead.
   if (!navigator.connection?.saveData) (window.requestIdleCallback || (f => setTimeout(f, 1500)))(prefetchPhotos);
   // The webfont can change panel heights after the first layout.
-  document.fonts?.ready.then(() => { layoutChrome(); if (!S.flying) frame(); draw(); setTimeout(() => { S.booting = false; }, 2500); });
+  document.fonts?.ready.then(() => { layoutChrome(); if (!S.flying) frame(); draw(); setTimeout(() => { S.booting = false; remeasure(); }, 2500); });
+  addEventListener('load', remeasure);
+  window.visualViewport?.addEventListener('resize', remeasure);
+  if (debug) debugBox();
   Promise.all(MAP_FACES.map(f => document.fonts?.load(f))).then(draw, () => {});
 }
 

@@ -98,7 +98,7 @@ h1, h2, h3 { text-wrap: balance; }
 #globe:focus-visible { outline-offset: -4px; }
 /* The paper globe (and any colouring) stays light in dark mode (app.js sets paper-globe): toned down a little so it does not glare on the
    dark page. The lettering keeps its contrast (water names on their halo 5.6:1, country names 8.7:1). */
-@media (prefers-color-scheme: dark) { body.paper-globe :is(#globe, #tiles) { filter: brightness(0.92); } }
+@media (prefers-color-scheme: dark) { body.paper-globe #tiles { filter: brightness(0.92); } } /* the globe canvas dims itself (dimPaper) */
 /* In dark mode the light focus ring gets a dark ring inside it, so it shows on light globes and pale tiles too. */
 @media (prefers-color-scheme: dark) {
   body:has(#globe:focus-visible)::after { content: ''; position: fixed; inset: 4px; z-index: 1; border: 2px solid var(--panel); pointer-events: none; }
