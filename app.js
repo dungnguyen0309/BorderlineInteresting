@@ -721,6 +721,7 @@ function render() {
   // size either way.
   const dpr = S.moving && coarse ? Math.min(S.dpr, 2) : S.dpr;
   if (canvas.width !== Math.floor(S.w * dpr)) { canvas.width = S.w * dpr; canvas.height = S.h * dpr; }
+  S.drawn = (S.drawn || 0) + 1; S.lastDpr = dpr; S.lastLod = lod;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, S.w, S.h);
 
@@ -1151,14 +1152,16 @@ const remeasure = () => { if (innerWidth !== S.w || innerHeight !== S.h || Math.
 // ?debug: the numbers that decide how sharp the globe is, for a device the app cannot be tested on directly.
 function debugBox() {
   const box = document.createElement('pre');
-  box.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:9;margin:0;padding:6px 8px;font:12px/1.4 monospace;background:rgba(0,0,0,.75);color:#fff;pointer-events:none';
+  box.style.cssText = 'position:fixed;left:8px;top:calc(env(safe-area-inset-top) + 170px);z-index:9;margin:0;padding:6px 8px;font:12px/1.4 monospace;background:rgba(0,0,0,.75);color:#fff;pointer-events:none';
   document.body.append(box);
   const show = () => { const v = window.visualViewport; box.textContent = `dpr ${devicePixelRatio} (used ${S.dpr})
 window ${innerWidth}x${innerHeight} (used ${S.w}x${S.h})
 canvas ${canvas.width}x${canvas.height} css ${canvas.clientWidth}x${canvas.clientHeight}
 viewport scale ${v ? v.scale.toFixed(2) : '?'}
-moving ${!!S.moving} booting ${!!S.booting} flying ${!!S.flying}
-filter ${getComputedStyle(canvas).filter}`; };
+moving ${!!S.moving} booting ${!!S.booting} flying ${!!S.flying} gesture ${!!S.gesture}
+draws ${S.drawn || 0}, last at ${S.lastDpr}x, detail ${S.lastLod}
+fonts ${document.fonts?.status} filter ${getComputedStyle(canvas).filter}
+${(performance.now() / 1000).toFixed(1)} s`; };
   show(); setInterval(show, 500);
 }
 function resize() {
