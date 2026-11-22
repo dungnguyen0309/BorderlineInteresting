@@ -1902,16 +1902,30 @@ function photosHTML(d) {
 // The flag and the coat of arms (or emblem, or seal) at the head of Overview, from scripts/build_symbols.py. Loaded with
 // the first country opened; a failed load leaves them out.
 let symbols = null, symbolsLoad = null;
-function symbolsHTML(d) {
+// The country's outline beside its flag: every part within about 3,000 km of the main one (so Indonesia keeps its
+// islands and France leaves French Guiana out), on an equal-area projection centred on it, so it is not stretched.
+function shapeSVG(f) {
+  const g = f.geometry, polys = g.type === 'Polygon' ? [g.coordinates] : g.type === 'MultiPolygon' ? g.coordinates : [];
+  const near = polys.filter(q => d3.geoDistance(d3.geoCentroid({ type: 'Polygon', coordinates: q }), f.anchor) < 0.52);
+  if (!near.length) return '';
+  const geo = { type: 'MultiPolygon', coordinates: near };
+  const pj = d3.geoAzimuthalEqualArea().rotate([-f.anchor[0], -f.anchor[1]]).fitSize([1000, 1000], geo);
+  const p = d3.geoPath(pj), [[x0, y0], [x1, y1]] = p.bounds(geo), w = x1 - x0, h = y1 - y0;
+  if (!(w > 0 && h > 0)) return '';
+  const pad = Math.max(w, h) * 0.02, ratio = Math.min(3, Math.max(0.5, w / h));
+  return `<figure class="shape"><svg viewBox="${(x0 - pad).toFixed(1)} ${(y0 - pad).toFixed(1)} ${(w + 2 * pad).toFixed(1)} ${(h + 2 * pad).toFixed(1)}"
+    style="width:${Math.round(64 * ratio)}px" aria-hidden="true"><path d="${p.digits(1)(geo)}"/></svg><figcaption aria-hidden="true">Shape</figcaption></figure>`;
+}
+function symbolsHTML(d, f) {
   symbolsLoad ||= fetch('data/symbols.json').then(r => (r.ok ? r.json() : Promise.reject(new Error(r.status))))
     .catch(() => ({ countries: {} }))
     .then(s => { symbols = s; if (S.sel?.kind === 'country') lateRender(); });
-  const set = symbols?.countries[d.iso3];
-  if (!set?.length) return '';
+  const set = symbols?.countries[d.iso3] || [], shape = f ? shapeSVG(f) : '';
+  if (!set.length && !shape) return '';
   return `<div class="symbols">${set.map((p, i) => `<figure class="${p.kind === 'Flag' ? 'flag' : 'arms'}">
     <button type="button" data-photo="${d.iso3}|symbols|${i}" aria-label="${esc(p.title)}. Open the image" title="${esc(p.title)}">
     <img src="${esc(p.img.replace(/\/\d+px-/, '/330px-'))}" alt="" decoding="async" width="${p.w}" height="${p.h}"></button>
-    <figcaption aria-hidden="true">${esc(p.kind)}</figcaption></figure>`).join('')}</div>`;
+    <figcaption aria-hidden="true">${esc(p.kind)}</figcaption></figure>`).join('')}${shape}</div>`;
 }
 function openPhoto(key) {
   const [iso, g, i] = key.split('|');
@@ -2427,7 +2441,7 @@ function countryHTML(f) {
   // No "Names and codes" heading over a section holding only the status.
   const hasNames = codes.some(r => r[1] && r[0] !== 'Status');
   const panels = {
-    overview: symbolsHTML(d) + prof.overview + (facts.length ? `<h3>Key facts</h3>${dl(facts)}` : '') +
+    overview: symbolsHTML(d, f) + prof.overview + (facts.length ? `<h3>Key facts</h3>${dl(facts)}` : '') +
       (prof.leaders ? `<h3>Leaders and system</h3>${prof.leaders}` : '') + links + photosHTML(d) +
       (atlas?.failed ? NOT_LOADED : atlas && hasNames ? `<details class="sect"><summary>Names and codes</summary>${dl(codes)}</details>` : ''),
     people: peoplePanel,

@@ -756,6 +756,8 @@ body.keys .kb { display: inline; }
 .symbols img { display: block; height: 64px; width: auto; }
 .symbols .flag img { outline: 1px solid var(--line); outline-offset: -1px; }
 .symbols figcaption { margin-top: 4px; font-size: 0.89286rem; color: var(--muted); }
+.symbols .shape svg { display: block; height: 64px; }
+.symbols .shape path { fill: var(--field); stroke: none; }
 /* Many emblems are dark line art on a clear ground, so on the dark panel they get a sheet of paper behind them. */
 @media (prefers-color-scheme: dark) {
   .symbols .arms img { padding: 4px; border-radius: 4px; background: var(--sheet); }
