@@ -1131,10 +1131,12 @@ const fitBase = () => {
   const fr = freeRect(); S.base = Math.min(S.base, fr.w / 2 - 40, fr.h / 2 - 16); proj.scale(S.base * S.k); };
 const baseSize = () => Math.min(narrow() ? S.w * 0.46 : stacked() ? S.w / 2 - 40 : S.w * 0.42, S.h * 0.42);
 // The globe's sea and rim, drawn at once so the screen is not empty while the map data loads; render() takes over.
-// Canvas pixels per CSS pixel. Up to 3, except on iPhone and iPad: there WebKit showed a full-screen 3x canvas
-// softer than a 2x one (screenshots from an iPhone, 2026-11-22), so WebKit on iOS draws at 2x.
-const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-const pixelRatio = () => Math.min(devicePixelRatio || 1, IOS ? 2 : 3);
+// Canvas pixels per CSS pixel, up to 3.
+const pixelRatio = () => Math.min(devicePixelRatio || 1, 3);
+// On an iPhone the globe stayed soft after opening (2x or 3x alike) until the canvas changed size: WebKit keeps the
+// layer it made for the canvas while the page was still being shown (an in-app browser sliding up and scaling).
+// Emptying the canvas makes the next frame size it afresh (render), which gives WebKit a new layer.
+function refreshCanvas() { if (!features) return; canvas.width = 0; S.refreshed = (S.refreshed || 0) + 1; render(); } // drawn at once: no empty frame
 function drawSphere() {
   S.w = innerWidth; S.h = innerHeight; S.dpr = pixelRatio();
   canvas.width = S.w * S.dpr; canvas.height = S.h * S.dpr;
@@ -1163,7 +1165,7 @@ window ${innerWidth}x${innerHeight} (used ${S.w}x${S.h})
 canvas ${canvas.width}x${canvas.height} css ${canvas.clientWidth}x${canvas.clientHeight}
 viewport scale ${v ? v.scale.toFixed(2) : '?'}
 moving ${!!S.moving} booting ${!!S.booting} flying ${!!S.flying} gesture ${!!S.gesture}
-draws ${S.drawn || 0}, last at ${S.lastDpr}x, detail ${S.lastLod}
+draws ${S.drawn || 0}, last at ${S.lastDpr}x, detail ${S.lastLod}, canvas renewed ${S.refreshed || 0}x
 fonts ${document.fonts?.status} filter ${getComputedStyle(canvas).filter}
 ${(performance.now() / 1000).toFixed(1)} s`; };
   show(); setInterval(show, 500);
@@ -3562,8 +3564,8 @@ async function start() {
     if (!down.size && S.gesture) setTimeout(() => { if (!down.size && S.gesture) { S.gesture = false; if (S.moving) moving(); } }, 50);
   }, true);
   // A tab restored from the back-forward cache, or shown again, gets a fresh full-detail frame.
-  addEventListener('pageshow', e => { if (e.persisted) { S.moving = false; remeasure(); draw(); } });
-  document.addEventListener('visibilitychange', () => { if (!document.hidden && !S.gesture) { S.moving = false; draw(); } });
+  addEventListener('pageshow', e => { if (e.persisted) { S.moving = false; remeasure(); refreshCanvas(); } });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && !S.gesture) { S.moving = false; refreshCanvas(); } });
   $('#status').textContent = 'Loading map…';
   readTheme();
   drawSphere();
@@ -3596,8 +3598,9 @@ async function start() {
   // Data Saver: photos load with the first panel instead.
   if (!navigator.connection?.saveData) (window.requestIdleCallback || (f => setTimeout(f, 1500)))(prefetchPhotos);
   // The webfont can change panel heights after the first layout.
-  document.fonts?.ready.then(() => { layoutChrome(); if (!S.flying) frame(); draw(); setTimeout(() => { S.booting = false; remeasure(); }, 2500); });
-  addEventListener('load', remeasure);
+  document.fonts?.ready.then(() => { layoutChrome(); if (!S.flying) frame(); draw(); setTimeout(() => { S.booting = false; remeasure(); refreshCanvas(); }, 2500); });
+  for (const ms of [400, 1200]) setTimeout(refreshCanvas, ms);
+  addEventListener('load', () => { remeasure(); refreshCanvas(); });
   window.visualViewport?.addEventListener('resize', remeasure);
   if (debug) debugBox();
   Promise.all(MAP_FACES.map(f => document.fonts?.load(f))).then(draw, () => {});
