@@ -89,6 +89,9 @@ const graticule = d3.geoGraticule10();
 const tiles = tileLayer($('#tiles'), { onChange: () => draw() });
 const SPHERE = { type: 'Sphere' };
 
+// Test switches for a device that cannot be tested here (iPhone softness): ?t=raw,prec,lo,lite draw rest frames as
+// moving frames do, one way at a time. Read before fromUrl rewrites the address.
+const T = new Set((new URLSearchParams(location.search).get('t') || '').split(','));
 const S = {
   k: 1, base: 300, w: 0, h: 0, dpr: 1, sel: null, hover: null, mode: 'none', tab: 'overview',
   layers: new Set(), returnFocus: null, index: [], flying: false, listSort: 'value',
@@ -382,7 +385,7 @@ function stroke(geo, color, width) {
 const projCache = new Map();
 let projView = '', projKeep = false;
 function projected(key, make) {
-  if (S.moving && !projKeep) return make();
+  if ((S.moving || T.has('raw')) && !projKeep) return make();
   let p = projCache.get(key);
   if (!p) {
     p = new Path2D(); path.context(p);
@@ -645,7 +648,7 @@ function overlayApi(c) {
     // The open point's position, so a map type can mark its own marker there (Airports: the plane in the accent).
     sel: S.sel?.kind === 'point' ? S.sel.obj.at : null,
     // A finger is moving the globe on a touch screen: slower phones get lighter frames (see render).
-    lite: S.moving && coarse,
+    lite: (S.moving && coarse) || T.has('lite'),
     // Shapes projected once per view (a Path2D at rest), and how to fill, stroke or clip with one;
     // seen(cap) says whether a bounding cap ({c: [lon, lat], r: radians}) can be on screen.
     projected, paint, seen: inView(c), onFace,
@@ -699,7 +702,7 @@ function outline(geo, passes) {
 function render() {
   queued = false;
   const c = center();
-  const lod = detail(S.moving), lo = lod === 'lo';
+  const lod = detail(S.moving || T.has('lo')), lo = lod === 'lo';
   if (lod === 'hi' && !hiMap) loadHi();
   const hi = lod === 'hi' && !!hiMap;
   // Skip shapes that cannot be on screen (past the horizon, or outside the window when zoomed in).
@@ -707,7 +710,7 @@ function render() {
   const shape = f => (lo ? f.lo : hi && f.hi ? partShape(f.hi, seen) : f);
   const B = lo ? bordersLo : hi ? hiMap.borders : borders, K = lo ? coastLo : hi ? hiMap.coast : coast;
   // While moving, no resampling between a shape's own points (they are close enough at every zoom); at rest, fine curves.
-  proj.precision(S.moving ? 0 : 0.4);
+  proj.precision(S.moving || T.has('prec') ? 0 : 0.4);
   // Zoomed in, shapes are clipped to the visible circle before they are projected, so the parts of a large country
   // off screen cost nothing (the clip edge lies past the window's corners; at least 2 degrees, where the clip stays exact).
   const clip = Math.max(2, viewRadius(24) * 180 / Math.PI);
@@ -1165,7 +1168,7 @@ window ${innerWidth}x${innerHeight} (used ${S.w}x${S.h})
 canvas ${canvas.width}x${canvas.height} css ${canvas.clientWidth}x${canvas.clientHeight}
 viewport scale ${v ? v.scale.toFixed(2) : '?'}
 moving ${!!S.moving} booting ${!!S.booting} flying ${!!S.flying} gesture ${!!S.gesture}
-draws ${S.drawn || 0}, last at ${S.lastDpr}x, detail ${S.lastLod}, canvas renewed ${S.refreshed || 0}x
+draws ${S.drawn || 0}, last at ${S.lastDpr}x, detail ${S.lastLod}, canvas renewed ${S.refreshed || 0}x, test ${[...T].filter(Boolean).join('+') || 'none'}
 fonts ${document.fonts?.status} filter ${getComputedStyle(canvas).filter}
 ${(performance.now() / 1000).toFixed(1)} s`; };
   show(); setInterval(show, 500);
