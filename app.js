@@ -27,10 +27,11 @@ const INCOMES = ['Low income', 'Lower middle income', 'Upper middle income', 'Hi
 // checked against the land it sits on (dataviz validate_palette.js --ordinal): one hue, lightness rising in even
 // steps, the faintest step at 2:1 or more on the land. Seven stops, so seven classes are exactly these colours.
 const RAMPS = {
-  light: d3.piecewise(d3.interpolateLab, ['#ccaa6c', '#c0934f', '#b37c31', '#a76406', '#915213', '#7a4117', '#623217']),
-  // Dark land: more is more colour here too, from a dim brown-grey near the land to a saturated amber (never a pale
-  // cream, which would read as paper or no data), lightness still rising in even steps.
-  dark: d3.piecewise(d3.interpolateLab, ['#6a5a4c', '#876b4b', '#a27d4c', '#bb904e', '#d3a44f', '#eaba50', '#ffd152'])
+  // Shades of green (the user's choice, 2026-11-23), even OKLCH steps; validated with the dataviz ordinal checks:
+  // light end 2.03:1 on the paper land, 2.23:1 on dark land.
+  light: d3.piecewise(d3.interpolateLab, ['#8bbb8b', '#74a870', '#5e9455', '#498138', '#356e15', '#2b5900', '#214500']),
+  // Dark land: more is more colour, from a dim green-grey near the land to a bright green, lightness rising.
+  dark: d3.piecewise(d3.interpolateLab, ['#526956', '#5c7e5f', '#679566', '#75ab6c', '#85c170', '#97d871', '#acee70'])
 };
 // Names on a coloured country take dark or light ink, whichever stands out more from the fill, with a halo of the
 // other: the ramps run from pale to deep brown, so no one ink reads on every class.
@@ -648,7 +649,7 @@ function overlayApi(c) {
     // The open point's position, so a map type can mark its own marker there (Airports: the plane in the accent).
     sel: S.sel?.kind === 'point' ? S.sel.obj.at : null,
     // A finger is moving the globe on a touch screen: slower phones get lighter frames (see render).
-    lite: (S.moving && coarse) || T.has('lite'),
+    lite: (S.moving && coarse) || T.has('lite'), snap,
     // Shapes projected once per view (a Path2D at rest), and how to fill, stroke or clip with one;
     // seen(cap) says whether a bounding cap ({c: [lon, lat], r: radians}) can be on screen.
     projected, paint, seen: inView(c), onFace,
@@ -899,6 +900,7 @@ function onFace(b) {
   return [[b[0], b[1]], [b[2], b[1]], [b[0], b[3]], [b[2], b[3]]].every(([x, y]) => Math.hypot(x - cx, y - cy) <= r);
 }
 
+const snap = v => Math.round(v * S.dpr) / S.dpr;
 const landOf = new WeakMap(); // hot spot -> the country it is in (or null at sea), for its name's ink
 function drawLabels(c) {
   const boxes = [];
@@ -918,8 +920,9 @@ function drawLabels(c) {
     if (force || (b[0] >= 4 && b[2] <= S.w - 4 && onFace(b) && !boxes.some(o => b[0] < o[2] && b[2] > o[0] && b[1] < o[3] && b[3] > o[1]))) {
       boxes.push(b);
       ctx.font = font; ctx.letterSpacing = `${spacing}px`;
-      ctx.lineWidth = on ? 3 : 2.5; ctx.strokeStyle = on ? on.halo : ink.halo; ctx.strokeText(text, x, y);
-      ctx.fillStyle = on ? on.text : color; ctx.fillText(text, x, y);
+      const px = snap(x), py = snap(y); // on the device pixel grid, so names stay crisp on 1.25x and 1.5x screens
+      ctx.lineWidth = on ? 3 : 2.5; ctx.strokeStyle = on ? on.halo : ink.halo; ctx.strokeText(text, px, py);
+      ctx.fillStyle = on ? on.text : color; ctx.fillText(text, px, py);
       ctx.letterSpacing = '0px';
     }
   };
@@ -2971,7 +2974,8 @@ const blank = s => s.replaceAll('<a ', '<a target="_blank" rel="noopener" ');
 // only when the text changes.
 let creditShown = null;
 function writeCredit() {
-  const o = mapType(S.map).onMap, html = blank((typeof o === 'function' ? o({ k: S.k }) : o) || '');
+  const o = mapType(S.map).onMap, req = blank((typeof o === 'function' ? o({ k: S.k }) : o) || '');
+  const html = `${req ? `${req} · ` : ''}Made by Tuan Dung Nguyen`;
   if (html !== creditShown) $('#attrib').innerHTML = creditShown = html;
 }
 

@@ -267,7 +267,8 @@ export default {
       if (f.area * k * k < 0.0004) continue;
       // While the globe moves, sizes go in whole pixels and widths are scaled from one measure at 20px, so a pinch
       // reuses a few fonts and measures nothing new.
-      const exact = Math.min(22, 8.5 + 26 * Math.sqrt(f.area) * k), size = api.moving ? Math.round(exact) : exact;
+      // Whole pixels at rest too: a name set at 13.7px blurs on a 1.25x or 1.5x screen.
+      const exact = Math.min(22, 8.5 + 26 * Math.sqrt(f.area) * k), size = Math.round(exact);
       const [x, y] = proj(f.label);
       const text = f.d.name.toUpperCase();
       const est = textWidth(ctx, `600 20px ${FONT}`, 2.4, text) * size / 20;
@@ -288,8 +289,9 @@ export default {
         const ty = (fit[1] + fit[3]) / 2;
         ctx.font = `600 ${size}px ${FONT}`; ctx.letterSpacing = `${size * 0.12}px`;
         const on = inkOf(f);
-        ctx.lineWidth = on ? 3 : 2.5; ctx.strokeStyle = on ? on.halo : PAPER; ctx.strokeText(text, x, ty);
-        ctx.fillStyle = on ? on.text : INK; ctx.fillText(text, x, ty);
+        const px = api.snap(x), py = api.snap(ty);
+        ctx.lineWidth = on ? 3 : 2.5; ctx.strokeStyle = on ? on.halo : PAPER; ctx.strokeText(text, px, py);
+        ctx.fillStyle = on ? on.text : INK; ctx.fillText(text, px, py);
       } else if (mine) now.add(f.d.iso3);
       if (!early && cap && now.has(f.d.iso3)) dot(cap); // later names, seas, parallels and hot-spot names keep off the star
       ctx.letterSpacing = '0px';
@@ -321,8 +323,9 @@ export default {
       if (box[2] > api.w - 4 || x < 4 || !api.onFace(box) || overlaps(boxes, box)) continue; // not cut by the window edge or the limb
       boxes.push(box);
       const on = fOf && inkOf(fOf.get(c.iso));
-      ctx.lineWidth = on ? 3 : 2.5; ctx.strokeStyle = on ? on.halo : 'rgba(255, 253, 245, 0.7)'; ctx.strokeText(c.n, x + 6, y);
-      ctx.fillStyle = on ? on.text : INK; ctx.fillText(c.n, x + 6, y);
+      const px = api.snap(x + 6), py = api.snap(y);
+      ctx.lineWidth = on ? 3 : 2.5; ctx.strokeStyle = on ? on.halo : 'rgba(255, 253, 245, 0.7)'; ctx.strokeText(c.n, px, py);
+      ctx.fillStyle = on ? on.text : INK; ctx.fillText(c.n, px, py);
     }
     ctx.textAlign = 'center';
   }
